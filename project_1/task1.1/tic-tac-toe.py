@@ -2,7 +2,6 @@
 import numpy as np
 
 
-
 def move_still_possible(S):
     return not (S[S==0].size == 0)
 
@@ -33,9 +32,9 @@ def move_was_winning_move(S, p):
     return False
 
 
-
 # relate numbers (1, -1, 0) to symbols ('x', 'o', ' ')
-symbols = {1:'x', -1:'o', 0:' '}
+symbols = {1: 'x', -1: 'o', 0: ' '}
+
 
 # print game state matrix using symbols
 def print_game_state(S):
@@ -43,9 +42,6 @@ def print_game_state(S):
     for n in [-1, 0, 1]:
         B[B==n] = symbols[n]
     print B
-
-
-
 
 
 if __name__ == '__main__':
@@ -58,7 +54,6 @@ if __name__ == '__main__':
 
     # initialize flag that indicates win
     noWinnerYet = True
-    
 
     while move_still_possible(gameState) and noWinnerYet:
         # get player symbol
