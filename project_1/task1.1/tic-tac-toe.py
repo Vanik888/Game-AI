@@ -1,17 +1,16 @@
-
 import numpy as np
 
 
 def move_still_possible(S):
-    return not (S[S==0].size == 0)
+    return not (S[S == 0].size == 0)
 
 
 def move_at_random(S, p):
-    xs, ys = np.where(S==0)
+    xs, ys = np.where(S == 0)
 
     i = np.random.permutation(np.arange(xs.size))[0]
-    
-    S[xs[i],ys[i]] = p
+
+    S[xs[i], ys[i]] = p
 
     return S
 
@@ -40,13 +39,13 @@ symbols = {1: 'x', -1: 'o', 0: ' '}
 def print_game_state(S):
     B = np.copy(S).astype(object)
     for n in [-1, 0, 1]:
-        B[B==n] = symbols[n]
+        B[B == n] = symbols[n]
     print B
 
 
 if __name__ == '__main__':
     # initialize 3x3 tic tac toe board
-    gameState = np.zeros((3,3), dtype=int)
+    gameState = np.zeros((3, 3), dtype=int)
 
     # initialize player number, move counter
     player = 1
@@ -65,7 +64,7 @@ if __name__ == '__main__':
 
         # print current game state
         print_game_state(gameState)
-        
+
         # evaluate game state
         if move_was_winning_move(gameState, player):
             print 'player %s wins after %d moves' % (name, mvcntr)
@@ -73,9 +72,7 @@ if __name__ == '__main__':
 
         # switch player and increase move counter
         player *= -1
-        mvcntr +=  1
-
-
+        mvcntr += 1
 
     if noWinnerYet:
-        print 'game ended in a draw' 
+        print 'game ended in a draw'
