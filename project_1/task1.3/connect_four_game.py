@@ -32,18 +32,20 @@ class ConnectFourGame:
 
     def __move_was_winning_move(self, p):
 
-        x_axis_sums = (np.sum(self.game_state, axis=0)) * p
-        for i, x_sum in list(enumerate(x_axis_sums)):
-            # if x_sum == winning_sum:
-            row_to_check = self.game_state[:, i]
+        # y_axis_sums = (np.sum(self.game_state, axis=1)) * p
+        # for i, y_sum in list(enumerate(y_axis_sums)):
+        for i in range(n_rows):
+            # if y_sum == winning_sum:
+            row_to_check = self.game_state[i, :]
             if (row_to_check == 0).sum() <= 3:
                 if self.__check_all_sublists(row_to_check):
                     return True
 
-        y_axis_sums = (np.sum(self.game_state, axis=1)) * p
-        for i, y_sum in list(enumerate(y_axis_sums)):
-            # if y_sum == winning_sum:
-            column_to_check = self.game_state[i, :]
+        # x_axis_sums = (np.sum(self.game_state, axis=0)) * p
+        # for i, x_sum in list(enumerate(x_axis_sums)):
+        for i in range(n_columns):
+            # if x_sum == winning_sum:
+            column_to_check = self.game_state[:, i]
             if (column_to_check == 0).sum() <= 3:
                 if self.__check_all_sublists(column_to_check):
                     return True
