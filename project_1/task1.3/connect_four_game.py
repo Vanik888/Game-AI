@@ -65,7 +65,8 @@ class ConnectFourGame:
         # Check all non-main diagonals of length at least 4
         # if there is a winning combination
         for i in diagonal_shifts:
-            diagonal = np.rot90(self.game_state).diagonal(i)
+            # matrix is rotated. diagonals are shifted
+            diagonal = np.rot90(self.game_state).diagonal(i - 1)
             if (diagonal == 0).sum() <= 3:
                 if self.__check_all_sublists(diagonal):
                     return True
