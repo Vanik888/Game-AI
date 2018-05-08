@@ -45,9 +45,9 @@ class GUI:
                 y1 = (6 - r-1)*self.elementSize
                 fill = self.p1Color if self.game.game_state[r, c] == 1 else self.p2Color
                 self.canvas.create_oval(x0 + 2,
-                                        self.canvas.winfo_height() - (y0 + 2),
+                                        self.canvas.winfo_height() - (y0 - 2),
                                         x1 - 2,
-                                        self.canvas.winfo_height() - (y1 - 2),
+                                        self.canvas.winfo_height() - (y1 + 2),
                                         fill = fill, outline=self.gridColor)
 
     def drawGrid(self):
