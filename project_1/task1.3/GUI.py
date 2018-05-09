@@ -62,7 +62,7 @@ class GUI:
             self.canvas.create_line(x, y0, x, y1, fill=self.gridColor)
 
     def drop(self, column):
-        self.game.make_move(self.player, column)
+        return self.game.make_move(self.player, column)
 
     def newGame(self):
         # Ask for players' names
@@ -96,7 +96,9 @@ class GUI:
         c = event.x // self.elementSize
         
         if (0 <= c < self.game.game_state.shape[1]):
-            self.drop(c)
+            desired_row = self.drop(c)
+            if desired_row == -1:
+                return
             self.draw()
 
         if self.game.move_was_winning_move():

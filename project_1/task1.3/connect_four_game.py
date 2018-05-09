@@ -35,6 +35,8 @@ class ConnectFourGame:
         if desired_row != -1:
             self.game_state[desired_row, column] = p
 
+        return desired_row
+
     """This method checks whether one player has won the game"""
     def move_was_winning_move(self):
 
