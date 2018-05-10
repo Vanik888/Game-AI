@@ -17,7 +17,7 @@ class GUI:
 
         master.title('Connect Four')
         
-        label = Label(master, text="Connect Four")
+        label = Label(master, text="")
         label.grid(row=0)
 
         button = Button(master, text="New Game!", command=self._newGameButton)
@@ -81,13 +81,16 @@ class GUI:
         self.drawGrid()
         self.draw()
 
+        self.gameOn = True
         self._updateCurrentPlayer()
 
-        self.gameOn = True
 
     def _updateCurrentPlayer(self):
-        p = self.p1 if self.player == 1 else self.p2
-        self.currentPlayerVar.set('Current player: ' + p)
+        if self.gameOn:
+            p = self.p1 if self.player == 1 else self.p2
+            self.currentPlayerVar.set('Current player: ' + p)
+        else:
+            self.currentPlayerVar.set('')
 
     def _canvasClick(self, event):
         if not self.gameOn: return
@@ -111,6 +114,8 @@ class GUI:
             self.canvas.create_text(x, y, text=t, font=("Helvetica", 32), fill="#333")
 
         if not self.game.move_still_possible():
+            x = self.canvas.winfo_width() // 2
+            y = self.canvas.winfo_height() // 2
             self.gameOn = False
             self.canvas.create_text(x, y, text="DRAW", font=("Helvetica", 32),
                                     fill="#333")
