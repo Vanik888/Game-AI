@@ -5,6 +5,8 @@ from constants import *
 class ConnectFourGame:
     def __init__(self):
         self.game_state = np.zeros((n_rows, n_columns), dtype=int)
+        self.last_inserted_column = -1
+        self.last_inserted_row = -1
 
     """Prints current game state"""
     def print_game_state(self):
@@ -34,23 +36,27 @@ class ConnectFourGame:
         # If an empty cell was found
         if desired_row != -1:
             self.game_state[desired_row, column] = p
+            self.last_inserted_column = column
+            self.last_inserted_row = desired_row
+
+        return desired_row
 
     """This method checks whether one player has won the game"""
     def move_was_winning_move(self):
 
         # Check all rows if there is a winning combination
-        for i in range(n_rows):
-            row_to_check = self.game_state[i, :]
-            if (row_to_check == 0).sum() <= 3:
-                if self.__check_all_sublists(row_to_check):
-                    return True
+        # for i in range(n_rows):
+        row_to_check = self.game_state[self.last_inserted_row, :]
+        if (row_to_check == 0).sum() <= 3:
+            if self.__check_all_sublists(row_to_check):
+                return True
 
         # Check all columns if there is a winning combination
-        for i in range(n_columns):
-            column_to_check = self.game_state[:, i]
-            if (column_to_check == 0).sum() <= 3:
-                if self.__check_all_sublists(column_to_check):
-                    return True
+        # for i in range(n_columns):
+        column_to_check = self.game_state[:, self.last_inserted_column]
+        if (column_to_check == 0).sum() <= 3:
+            if self.__check_all_sublists(column_to_check):
+                return True
 
         # TODO proper naming in comments required
 
