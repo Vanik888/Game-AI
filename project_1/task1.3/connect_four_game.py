@@ -21,10 +21,12 @@ class ConnectFourGame:
     If parameter column is equal to None, that means, that
     move is made at random.
     """
-    def make_move(self, p, column=None):
+    def make_move(self, p, column=None, win_pos=None):
         if column is None:
-            column = self.__select_column_at_random()
-
+            if win_pos is not None:
+                column = self.__select_best_move(win_pos)
+            else:
+                column = self.__select_column_at_random()
         # Slicing the whole target column and finding first available
         # row for insertion of a new element.
         chosen_column = self.game_state[:, column]
@@ -32,7 +34,6 @@ class ConnectFourGame:
         for i, e in list(enumerate(chosen_column)):
             if e == 0:
                 desired_row = i
-
         # If an empty cell was found
         if desired_row != -1:
             self.game_state[desired_row, column] = p
@@ -40,6 +41,20 @@ class ConnectFourGame:
             self.last_inserted_row = desired_row
 
         return desired_row
+
+    """This method chooses best possible move 
+    based on statistics of 100000 games"""
+    def __select_best_move(self, win_pos):
+        best_pos = -1
+        best_value = 0
+        for i, j in zip(*np.where(self.game_state == 0)):
+            if win_pos[i, j] > best_value:
+                best_value = win_pos[i, j]
+                best_pos = j
+        if best_pos == -1:
+            best_pos = self.__select_column_at_random()
+        return best_pos
+
 
     """This method checks whether one player has won the game"""
     def move_was_winning_move(self):
