@@ -1,9 +1,5 @@
-from collections import Counter, defaultdict
-import pydot
-# from sklearn.externals.six import StringIO
-# from IPython.display import Image
-# from sklearn.tree import export_graphviz
-# import pydotplus
+from collections import defaultdict
+
 
 def print_node(node, file_name, root, dependencies):
     color = ['#399de506', '#e58139b0']
@@ -22,14 +18,6 @@ def print_node(node, file_name, root, dependencies):
         dependencies[root].append(new_root)
         print_node(c, file_name, new_root, dependencies)
 
-    # new_root = check_dependencies(dependencies, root)
-    # dependencies[root].append(new_root)
-    # print_node(node.left, file_name, new_root, dependencies)
-    #
-    # new_root = check_dependencies(dependencies, root)
-    # dependencies[root].append(new_root)
-    # print_node(node.right, file_name, new_root, dependencies)
-
 
 def write_dependencies(dependencies, file_name):
     with open(file_name, 'a') as f:
@@ -42,8 +30,7 @@ def graphVis(tree, file_name):
     with open(file_name, 'w') as f:
         f.write('digraph Tree {\n'
                 'node [shape=box, style="filled", color="black"] ;\n')
-        # for ind, depth, name, condition in enumerate(tree.output()):
-        #     f.write()
+
         node = tree.root
     dependencies = defaultdict(list)
     root = 0
@@ -52,8 +39,6 @@ def graphVis(tree, file_name):
 
     with open(file_name, 'a') as f:
         f.write('}\n')
-    # (graph,) = pydot.graph_from_dot_file(file_name)
-    # graph.write_png('somefile.png')
 
 
 def check_dependencies(dependencies, root):
