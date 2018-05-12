@@ -73,24 +73,22 @@ class ConnectFourGame:
             if self.__check_all_sublists(column_to_check):
                 return True
 
-        # TODO proper naming in comments required
 
         # Check all diagonals of length at least 4
         # if there is a winning combination
-        for i in diagonal_shifts:
-            diagonal = self.game_state.diagonal(i)
-            if (diagonal == 0).sum() <= 3:
-                if self.__check_all_sublists(diagonal):
-                    return True
+        diag_to_check = self.last_inserted_column - self.last_inserted_row
+        diagonal = self.game_state.diagonal(diag_to_check)
+        if len(diagonal) >= 4 and (diagonal == 0).sum() <= 3:
+            if self.__check_all_sublists(diagonal):
+                return True
 
         # Check all non-main diagonals of length at least 4
         # if there is a winning combination
-        for i in diagonal_shifts:
-            # matrix is rotated. diagonals are shifted
-            diagonal = np.rot90(self.game_state).diagonal(i - 1)
-            if (diagonal == 0).sum() <= 3:
-                if self.__check_all_sublists(diagonal):
-                    return True
+        rot_diag_to_check = self.last_inserted_column + self.last_inserted_row - n_columns + 1
+        diagonal = np.rot90(self.game_state).diagonal(rot_diag_to_check)
+        if len(diagonal) >= 4 and (diagonal == 0).sum() <= 3:
+            if self.__check_all_sublists(diagonal):
+                return True
         return False
 
     """Constructs sublists of given list and
