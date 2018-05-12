@@ -120,13 +120,6 @@ def game(x_strategy, o_strategy, x_stat, o_stat):
 
     # initialize 3x3 tic tac toe board
     game_state = np.zeros((3, 3), dtype=int)
-    # game_state = np.ones((3, 3), dtype=int)
-    # game_state[0][0] = -1
-    # game_state[0][2] = -1
-    # game_state[2][0] = -1
-    # game_state[2][2] = -1
-    # game_state[2][1] = 0
-    # game_state[1][2] = 0
 
     # initialize player number, move counter
     player = 1
@@ -204,36 +197,27 @@ class Tree:
         if current_depth > max_depth:
             return
 
-    def post_traverse(self):
-        self._post_traverse(self.root, depth=0)
+    def pre_traverse(self):
+        self._pre_traverse(self.root, depth=0)
 
-    def _post_traverse(self, node, depth):
+    def _pre_traverse(self, node, depth):
 
         print('%s| %s| %s| %s' % ('   '*depth, node.p, node.winner, depth))
         depth += 1
         if node.child_list:
             for c in node.child_list:
-                self._post_traverse(c, depth)
-        # else:
-        #     print('node in depth=%s' % depth)
-        #     print_game_state(node.S)
+                self._pre_traverse(c, depth)
 
     def build_tree(self):
-        self._build_tree(self.root, count=0)
+        self._build_tree(self.root)
 
-    def _build_tree(self, node, count):
-        count += 1
-        # if count > 7:
-            # return
+    def _build_tree(self, node):
 
         previous_player = node.p * (-1)
         if move_was_winning_move(node.S, previous_player):
             node.winner = previous_player
-            logger.info('%s) winner = %s' % (count,previous_player))
-            print_game_state(node.S)
             return
 
-        # if not move_was_winning_move(node.S, node.p):
         else:
             xs, ys = np.where(node.S == 0)
             for i in xrange(xs.size):
@@ -243,50 +227,41 @@ class Tree:
                 node.child_list.append(child_node)
         if not node.child_list:
             # draw
-            logger.debug('finished with draw')
-            # print_game_state(node.S)
             node.winner = 0
             return
 
         for c in node.child_list:
-            self._build_tree(c, count)
+            self._build_tree(c)
 
     def mark_nodes(self):
-        self._mark_nodes(self.root, d=0)
+        """
+        Sets winner to node.
+        winner = 1 for x
+        winner = 0 for draw
+        winner = -1 for o
+        """
+        self._mark_nodes(self.root)
 
-    def _mark_nodes(self, node, d):
-        d += 1
+    def _mark_nodes(self, node):
+
         if node.winner:
             return node.winner
 
-        if node == self.root:
-            pass
-
         result_list = []
         for c in node.child_list:
-            winner = self._mark_nodes(c, d)
+            winner = self._mark_nodes(c)
             if winner and winner not in result_list:
                 result_list.append(winner)
 
-        if node == self.root:
-            pass
-
         if node.p in result_list:
-            if node == self.root:
-                pass
             node.winner = node.p
-            logger.info('node %s win, result_list=%s' % (node, result_list))
-            logger.info(list(i.winner for i in node.child_list))
+
         elif 0 in result_list:
             node.winner = 0
-            logger.info('node %s draw, result_list=%s' % (node, result_list))
-            logger.info(list(i.winner for i in node.child_list))
+
         elif node.p * (-1) in result_list:
-            if node == self.root:
-                pass
             node.winner = node.p * (-1)
-            logger.info('node %s lose, result_list=%s' % (node, result_list))
-            logger.info(list(i.winner for i in node.child_list))
+
         return node.winner
 
     def print_tree(self):
@@ -301,10 +276,16 @@ class Tree:
     def find_state(self, node, S):
         if np.array_equal(node.S, S):
             return node
+        root_node = node
         for c in node.child_list:
             node = self.find_state(c, S)
             if node:
                 return node
+            # else:
+            #     logger.warning('Not found stat for root')
+            #     print_game_state(root_node.S)
+            #     logger.warning('State:')
+            #     print_game_state(S)
 
 
 class IntellectualMove:
@@ -316,16 +297,7 @@ class IntellectualMove:
         self.tree = Tree(p, S)
         self.tree.build_tree()
         self.tree.mark_nodes()
-        print('=*100')
-        print('layer=0')
-        self.tree.plot_layer(0)
-        print('=*100')
-        print('layer=1')
-        self.tree.plot_layer(1)
-        print('=*100')
-        print('layer=2')
-        self.tree.plot_layer(2)
-        # self.tree.post_traverse()
+        # self.tree.pre_traverse()
         # graphVis(self.tree, tree_csv)
 
     def __call__(self, S, p):
@@ -337,20 +309,19 @@ class IntellectualMove:
         # save it as current node
         if not self.current_node:
             self.current_node = self.tree.find_state(self.tree.root, S)
-
+        # if np.array_equal(S, np.zeros((3,3), ))
         # find the max gain node for the next step
         try:
-            self.current_node = self.tree.find_state(self.current_node, S).max_gain(p)
+            self.current_node = self.tree.\
+                find_state(self.current_node, S).max_gain(p)
         except Exception as e:
+            # logger.warning('Not found stat for root')
+            # print_game_state(self.current_node.S)
+            # logger.warning('State:')
+            # print_game_state(S)
             print(e)
 
-        print('current game state')
-        print_game_state(S)
-        print('current node state')
-        print_game_state(self.current_node.S)
         np.copyto(S, self.current_node.S)
-        print('current game state after step')
-        print_game_state(S)
         return S
 
 
@@ -379,7 +350,8 @@ if __name__ == '__main__':
     # print('printing tree')
     # tr.print_tree()
     intellectual_move = IntellectualMove()
-    tournament(x_strategy='super_intelligent',
+    tournament(n=100,
+               x_strategy='super_intelligent',
                o_strategy='random')
 
 
