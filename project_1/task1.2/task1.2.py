@@ -1,11 +1,14 @@
+import os
 import sys
-import pickle
 import logging
+
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
+
 
 from tree_plotter import graphVis
-tree_csv = 'tree.dot'
-tree_file = 'tree.pickle'
+plots_folder = 'plots'
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout,
                     format='%(levelname)s | %(asctime)s | %(message)s')
@@ -84,12 +87,50 @@ def print_game_state(S):
         B[B == n] = symbols[n]
     print B
 
+def plot_temperature_map(n, stat, img_name='temperature_map.png'):
+    global plots_folder
+    img_name = '%s_%s' % (n, img_name)
+    img_path = os.path.join(os.path.abspath(os.path.dirname(__name__)),
+                            plots_folder, img_name)
 
-def tournament(*args, **kwargs):
-    field_st, player_st = play(*args, **kwargs)
+    plt.figure(figsize=(20, 10))
+    coef = 100.0/stat.max()
+    plt.imshow(stat * coef, vmin=0, vmax=100)
+    plt.colorbar()
+    plt.savefig(img_path, facecolor='w', edgecolor='w',
+                    papertype=None, format='png', transparent=False,
+                    bbox_inches='tight', pad_inches=0.1)
+    plt.close()
+
+
+def plot_game_stat(n, x_strategy, o_strategy, player_st, img_name=''):
+    global plots_folder
+    img_name = img_name or '%s_%s_vs_%s.png' % (n, x_strategy, o_strategy)
+    img_path = os.path.join(os.path.abspath(os.path.dirname(__name__)),
+                           plots_folder, img_name)
+
+    # fig = plt.figure()
+    x_win, x_lose = player_st.values()
+    draw = n - sum(player_st.values())
+
+    x = np.arange(3)
+    data = [x_win, x_lose, draw]
+    plt.bar(x, data, color=['r', 'y', 'b'])
+    plt.xticks(x, ('X', 'O', 'Draw'))
+    plt.title('X uses %s, O uses %s' % (x_strategy, o_strategy))
+
+
+    plt.savefig(img_path, facecolor='w', edgecolor='w',
+                    papertype=None, format='png', transparent=False,
+                    bbox_inches='tight', pad_inches=0.1)
+    plt.close()
+
+def tournament(n, x_strategy, o_strategy, **kwargs):
+    field_st, player_st = play(n, x_strategy, o_strategy, **kwargs)
+    plot_game_stat(n, x_strategy, o_strategy, player_st)
     logger.info('Tournament statistics %s, %s vs %s' % (player_st,
-                                                        kwargs['x_strategy'],
-                                                        kwargs['o_strategy']))
+                                                        x_strategy,
+                                                        o_strategy))
 
 
 def play(n=10, x_strategy='random', o_strategy='random', x_stat={}, o_stat={}):
@@ -113,6 +154,9 @@ def train(n=10):
     logger.info('Start training')
     field_st, player_st = play(n)
 
+    plot_game_stat(n, 'random', 'random', player_st, 'training.png')
+    plot_temperature_map(n, field_st[-1], 'x_wins_map.png')
+    plot_temperature_map(n, field_st[1], 'o_wins_map.png')
     # normalize the array with statistic
     for k, v in field_st.items():
         field_st[k] = v / np.sum(v).astype(float)
@@ -426,80 +470,82 @@ if __name__ == '__main__':
     full_tree_move = FullTreeMove()
     min_max_move = MinMaxMove(level=2)
 
-    field_st, player_st = train(n=10000)
-
-    tournament(n=100,
+    games = 100
+    trainings = 1000
+    field_st, player_st = train(n=trainings)
+    tournament(n=games,
                x_strategy='intelligent',
                o_strategy='intelligent',
                x_stat=field_st[1],
                o_stat=field_st[-1])
 
-    tournament(n=100,
+    tournament(n=games,
                x_strategy='intelligent',
                o_strategy='random',
                x_stat=field_st[1],
                o_stat=field_st[-1])
 
-    tournament(n=100,
+    tournament(n=games,
                x_strategy='intelligent',
                o_strategy='min_max',
                x_stat=field_st[1],
                o_stat=field_st[-1])
 
-    # tournament(n=10000,
-    #            x_strategy='intelligent',
-    #            o_strategy='full_tree',
-    #            x_stat=field_st[1],
-    #            o_stat=field_st[-1])
-
-
-    tournament(n=100,
+    tournament(n=games,
                x_strategy='min_max',
                o_strategy='min_max')
 
-    tournament(n=100,
+    tournament(n=games,
                x_strategy='min_max',
                o_strategy='intelligent',
                x_stat=field_st[1],
-               o_stat=field_st[-1]
-               )
+               o_stat=field_st[-1])
 
-    tournament(n=100,
+    tournament(n=games,
                x_strategy='min_max',
                o_strategy='random')
 
-    # tournament(n=100,
-    #            x_strategy='min_max',
-    #            o_strategy='full_tree')
-
-    tournament(n=100,
+    tournament(n=games,
                x_strategy='random',
                o_strategy='random')
 
-    tournament(n=100,
+    tournament(n=games,
                x_strategy='random',
                o_strategy='intelligent',
                x_stat=field_st[1],
                o_stat=field_st[-1])
 
 
-    tournament(n=100,
+    tournament(n=games,
                x_strategy='random',
                o_strategy='min_max')
-    #
-    # tournament(n=100,
-    #            x_strategy='full_tree',
-    #            o_strategy='random')
 
-    # tournament(n=100,
-    #            x_strategy='full_tree',
-    #            o_strategy='min_max')
 
-    # tournament(n=100,
+
+    # tournament(n=games,
+    #            x_strategy='intelligent',
+    #            o_strategy='full_tree',
+    #            x_stat=field_st[1],
+    #            o_stat=field_st[-1])
+
+    # tournament(n=games,
     #            x_strategy='min_max',
     #            o_strategy='full_tree')
 
-    # tournament(n=100,
+    #
+    # tournament(n=games,
+    #            x_strategy='full_tree',
+    #            o_strategy='random')
+
+    # tournament(n=games,
+    #            x_strategy='full_tree',
+    #            o_strategy='min_max')
+
+    # tournament(n=games,
+    #            x_strategy='min_max',
+    #            o_strategy='full_tree')
+
+    # tournament(n=games,
     #            x_strategy='full_time',
     #            o_strategy='intelligent',
     #            x_stat=field_st[1],
