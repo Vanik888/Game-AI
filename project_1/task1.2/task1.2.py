@@ -113,6 +113,7 @@ def train(n=10):
 
 
 def game(x_strategy, o_strategy, x_stat, o_stat):
+    global intellectual_move
 
     inv_symbols = {v: k for k, v in symbols.items()}
     strategy_dict = {inv_symbols['x']: x_strategy, inv_symbols['o']: o_strategy}
@@ -127,6 +128,9 @@ def game(x_strategy, o_strategy, x_stat, o_stat):
 
     # initialize flag that indicates win
     noWinnerYet = True
+
+    # new tutorial should look for state from root
+    intellectual_move.current_node = None
 
     while move_still_possible(game_state) and noWinnerYet:
         # get player symbol
@@ -182,7 +186,7 @@ class Node:
 
 class Tree:
     def __init__(self, p, S=None):
-        self.root = Node(p, S)
+        self.root = Node(p, np.copy(S))
 
     def plot_layer(self, max_depth):
         self._plot_layer(self.root, 0, max_depth)
@@ -276,16 +280,11 @@ class Tree:
     def find_state(self, node, S):
         if np.array_equal(node.S, S):
             return node
-        root_node = node
+
         for c in node.child_list:
             node = self.find_state(c, S)
             if node:
                 return node
-            # else:
-            #     logger.warning('Not found stat for root')
-            #     print_game_state(root_node.S)
-            #     logger.warning('State:')
-            #     print_game_state(S)
 
 
 class IntellectualMove:
@@ -311,14 +310,13 @@ class IntellectualMove:
             self.current_node = self.tree.find_state(self.tree.root, S)
         # if np.array_equal(S, np.zeros((3,3), ))
         # find the max gain node for the next step
+
         try:
             self.current_node = self.tree.\
                 find_state(self.current_node, S).max_gain(p)
         except Exception as e:
-            # logger.warning('Not found stat for root')
-            # print_game_state(self.current_node.S)
-            # logger.warning('State:')
-            # print_game_state(S)
+            logger.warning('Not found state for root')
+            print_game_state(S)
             print(e)
 
         np.copyto(S, self.current_node.S)
