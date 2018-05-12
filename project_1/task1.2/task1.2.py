@@ -19,8 +19,13 @@ def move_still_possible(S):
 def move(S, p, stat, strategy):
     if strategy == 'intelligent':
         return move_at_intelligent(S, p, stat)
-    elif strategy == 'super_intelligent':
-        return intellectual_move(S, p)
+
+    elif strategy == 'full_tree':
+        return full_tree_move(S, p)
+
+    elif strategy == 'min_max':
+        return min_max_move(S, p)
+
     else:
         return move_at_random(S, p)
 
@@ -28,6 +33,7 @@ def move(S, p, stat, strategy):
 def move_at_intelligent(S, p, stat):
     # (s == 0).astype(int) keeps only empty places in field
     intersection = ((S==0).astype(int) * stat)
+
     if np.max(intersection) > 0:
         i, j = np.unravel_index(intersection.argmax(), intersection.shape)
         logger.debug('max probability to win in position S[%s][%s]=%s' %
@@ -81,7 +87,9 @@ def print_game_state(S):
 
 def tournament(*args, **kwargs):
     field_st, player_st = play(*args, **kwargs)
-    logger.info('Tournament statistics %s' % player_st)
+    logger.info('Tournament statistics %s, %s vs %s' % (player_st,
+                                                        kwargs['x_strategy'],
+                                                        kwargs['o_strategy']))
 
 
 def play(n=10, x_strategy='random', o_strategy='random', x_stat={}, o_stat={}):
@@ -102,18 +110,19 @@ def play(n=10, x_strategy='random', o_strategy='random', x_stat={}, o_stat={}):
 
 
 def train(n=10):
+    logger.info('Start training')
     field_st, player_st = play(n)
 
     # normalize the array with statistic
     for k, v in field_st.items():
         field_st[k] = v / np.sum(v).astype(float)
-
+    logger.info('Finish training')
     logger.info('Train statistics %s' % player_st)
     return field_st, player_st
 
 
 def game(x_strategy, o_strategy, x_stat, o_stat):
-    global intellectual_move
+    global full_tree_move
 
     inv_symbols = {v: k for k, v in symbols.items()}
     strategy_dict = {inv_symbols['x']: x_strategy, inv_symbols['o']: o_strategy}
@@ -130,7 +139,7 @@ def game(x_strategy, o_strategy, x_stat, o_stat):
     noWinnerYet = True
 
     # new tutorial should look for state from root
-    intellectual_move.current_node = None
+    full_tree_move.current_node = None
 
     while move_still_possible(game_state) and noWinnerYet:
         # get player symbol
@@ -282,12 +291,16 @@ class Tree:
             return node
 
         for c in node.child_list:
+            if np.array_equal(c.S, S):
+                return node
+
+        for c in node.child_list:
             node = self.find_state(c, S)
             if node:
                 return node
 
 
-class IntellectualMove:
+class FullTreeMove:
     def __init__(self):
         self.tree = None
         self.current_node = None
@@ -316,6 +329,8 @@ class IntellectualMove:
                 find_state(self.current_node, S).max_gain(p)
         except Exception as e:
             logger.warning('Not found state for root')
+            logger.warning(p)
+            logger.warning(self.tree.root.S)
             print_game_state(S)
             print(e)
 
@@ -323,35 +338,172 @@ class IntellectualMove:
         return S
 
 
+class MinMaxMove:
+    def __init__(self, level):
+        self._level = level
+
+    def _utitlity_function(self, S, p):
+        if move_was_winning_move(S, p):
+            return p
+        if move_was_winning_move(S, p*(-1)):
+            return p * (-1)
+        if not move_still_possible(S):
+            return 0
+        # this state can lead to win as well as to lose, therefore
+        return 0.5 * p
+
+    def _build_tree(self, node, S, p, level):
+        child_list = []
+        child_p = p * (-1)
+
+        if level == 0:
+            self._util_dict[node] = self._utitlity_function(S, p)
+
+        else:
+            xs, ys = np.where(S == 0)
+            for i in xrange(xs.size):
+                new_node = max(self._node_dict.keys()) + 1
+                child_state = np.copy(S)
+                child_state[xs[i]][ys[i]] = p
+                self._node_dict[new_node] = (child_state, child_p)
+                child_list.append(new_node)
+
+            self._child_dict[node] = child_list
+            for c in child_list:
+                child_state, child_p = self._node_dict[c]
+                self._build_tree(c, child_state, child_p, level-1)
+
+    def _max_node_util(self, node):
+        if node in self._util_dict:
+            self._min_max_dict[node] = self._util_dict[node]
+            return self._util_dict[node]
+
+        mmv = -np.inf
+        for c in self._child_dict[node]:
+            mmv = max(mmv, self._min_node_util(c))
+
+        self._min_max_dict[node] = mmv
+        return mmv
+
+    def _min_node_util(self, node):
+        if node in self._util_dict:
+            self._min_max_dict[node] = self._util_dict[node]
+            return self._util_dict[node]
+
+        mmv = np.inf
+        for c in self._child_dict[node]:
+            mmv = min(mmv, self._max_node_util(c))
+
+        self._min_max_dict[node] = mmv
+        return mmv
+
+    def __call__(self, S, p):
+        self._node_dict = {}
+        self._child_dict = {}
+        self._util_dict = {}
+        self._min_max_dict = {}
+
+        current_node = 0
+        self._node_dict[current_node] = S, p
+        self._build_tree(current_node, S=S, p=p, level=2)
+
+        if p == 1:
+            self._max_node_util(current_node)
+            child_min_max = {c: self._min_max_dict[c]
+                             for c in self._child_dict[current_node]}
+            child_min_max = sorted(child_min_max.items(), key=lambda x: x[1])
+            return self._node_dict[child_min_max[-1][0]][0]
+
+        else:
+            self._min_node_util(current_node)
+            child_min_max = {c: self._min_max_dict[c]
+                             for c in self._child_dict[current_node]}
+            child_min_max = sorted(child_min_max.items(), key=lambda x: x[1])
+            return self._node_dict[child_min_max[0][0]][0]
+
+
 if __name__ == '__main__':
-    # field_st, player_st = train(n=100000)
+    full_tree_move = FullTreeMove()
+    min_max_move = MinMaxMove(level=2)
+
+    field_st, player_st = train(n=10000)
+
+    tournament(n=100,
+               x_strategy='intelligent',
+               o_strategy='intelligent',
+               x_stat=field_st[1],
+               o_stat=field_st[-1])
+
+    tournament(n=100,
+               x_strategy='intelligent',
+               o_strategy='random',
+               x_stat=field_st[1],
+               o_stat=field_st[-1])
+
+    tournament(n=100,
+               x_strategy='intelligent',
+               o_strategy='min_max',
+               x_stat=field_st[1],
+               o_stat=field_st[-1])
+
     # tournament(n=10000,
     #            x_strategy='intelligent',
-    #            o_strategy='random',
-    #            x_stat = field_st[1],
-    #            o_stat = field_st[-1]
-    #            )
-    # load_from_file = False
-    # dump_to_file = False
-    # if load_from_file:
-    #     with open(tree_file, 'rb') as f:
-    #         tr = pickle.load(f)
-    # else:
-    #     tr = Tree(p=1)
-    #     tr.build_tree()
-    #
-    # if dump_to_file:
-    #     with open(tree_file, 'wb') as f:
-    #         pickle.dump(tr, f, protocol=pickle.HIGHEST_PROTOCOL)
-    # print('marking nodes')
-    # tr.mark_nodes()
-    # print('printing tree')
-    # tr.print_tree()
-    intellectual_move = IntellectualMove()
+    #            o_strategy='full_tree',
+    #            x_stat=field_st[1],
+    #            o_stat=field_st[-1])
+
+
     tournament(n=100,
-               x_strategy='super_intelligent',
+               x_strategy='min_max',
+               o_strategy='min_max')
+
+    tournament(n=100,
+               x_strategy='min_max',
+               o_strategy='intelligent',
+               x_stat=field_st[1],
+               o_stat=field_st[-1]
+               )
+
+    tournament(n=100,
+               x_strategy='min_max',
                o_strategy='random')
 
+    # tournament(n=100,
+    #            x_strategy='min_max',
+    #            o_strategy='full_tree')
+
+    tournament(n=100,
+               x_strategy='random',
+               o_strategy='random')
+
+    tournament(n=100,
+               x_strategy='random',
+               o_strategy='intelligent',
+               x_stat=field_st[1],
+               o_stat=field_st[-1])
+
+
+    tournament(n=100,
+               x_strategy='random',
+               o_strategy='min_max')
+    #
+    # tournament(n=100,
+    #            x_strategy='full_tree',
+    #            o_strategy='random')
+
+    # tournament(n=100,
+    #            x_strategy='full_tree',
+    #            o_strategy='min_max')
+
+    # tournament(n=100,
+    #            x_strategy='min_max',
+    #            o_strategy='full_tree')
+
+    # tournament(n=100,
+    #            x_strategy='full_time',
+    #            o_strategy='intelligent',
+    #            x_stat=field_st[1],
+    #            o_stat=field_st[-1])
 
 
 
