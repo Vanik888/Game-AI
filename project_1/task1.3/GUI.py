@@ -145,6 +145,7 @@ class GUI:
                 self.gameOn = False
                 self.canvas.create_text(x, y, text=t, font=("Helvetica", 32),
                                         fill="#333")
+                return
 
             if not self.game.move_still_possible():
                 x = self.canvas.winfo_width() // 2
@@ -153,6 +154,8 @@ class GUI:
                 self.canvas.create_text(x, y, text="DRAW",
                                         font=("Helvetica", 32),
                                         fill="#333")
+                return
+
             self.player *= -1
             self._updateCurrentPlayer()
 
