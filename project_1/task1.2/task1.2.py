@@ -84,6 +84,12 @@ def print_game_state(S):
 
 
 def plot_temperature_map(n, stat, img_name='temperature_map.png'):
+    """
+    :param n: the number of games
+    :param stat: game statistics
+    :param img_name: image name
+    Plots the temperature map for normalized statistics matrix
+    """
     global plots_folder
     img_name = '%s_%s' % (n, img_name)
     img_path = os.path.join(os.path.abspath(os.path.dirname(__name__)),
@@ -91,7 +97,7 @@ def plot_temperature_map(n, stat, img_name='temperature_map.png'):
 
     plt.figure(figsize=(20, 10))
 
-    plt.imshow(stat, vmin=0, vmax=1, extent=[0, 3, 0, 3])
+    plt.imshow(stat, extent=[0, 3, 0, 3])
     plt.colorbar()
     plt.savefig(img_path, facecolor='w', edgecolor='w',
                     papertype=None, format='png', transparent=False,
@@ -100,6 +106,14 @@ def plot_temperature_map(n, stat, img_name='temperature_map.png'):
 
 
 def plot_game_stat(n, x_strategy, o_strategy, player_st, img_name=''):
+    """
+    :param n: number of games
+    :param x_strategy: the strategy for x
+    :param o_strategy: the strategy for o
+    :param player_st: the statistics dict
+    :param img_name: the image name
+    Plots game statistics diagram
+    """
     global plots_folder
     img_name = img_name or '%s_%s_vs_%s.png' % (n, x_strategy, o_strategy)
     img_path = os.path.join(os.path.abspath(os.path.dirname(__name__)),
@@ -120,6 +134,7 @@ def plot_game_stat(n, x_strategy, o_strategy, player_st, img_name=''):
                     papertype=None, format='png', transparent=False,
                     bbox_inches='tight', pad_inches=0.1)
     plt.close()
+
 
 def tournament(n, x_strategy, o_strategy, **kwargs):
     field_st, player_st = play(n, x_strategy, o_strategy, **kwargs)
@@ -204,10 +219,26 @@ def game(x_strategy, o_strategy, x_stat, o_stat):
 
 
 class MinMaxMove:
+    """
+    object is called to make a move based on heuristic
+    """
     def __init__(self, level):
+        """defines the tree depth for predictions"""
         self._level = level
 
     def _utitlity_function(self, S, p):
+        """
+        :param S: current state
+        :param p: current player
+        :return: utility value for stat S and player p
+        if x wins, set utility to 1
+        if o wins, set utility to -1
+        if draw, set utility to 0
+        if x moves and game is not finished, set utility to 0.5,
+         asuming that x might win later (be positive in predictions)
+        if o moves and game is not finished, set utility to -0.5,
+         asuming that o might win later (be positive in predictions)
+        """
         if move_was_winning_move(S, p):
             return p
         if move_was_winning_move(S, p*(-1)):
@@ -218,6 +249,13 @@ class MinMaxMove:
         return 0.5 * p
 
     def _build_tree(self, node, S, p, level):
+        """
+        :param node: node id
+        :param S: current state
+        :param p: current player
+        :param level: current tree depth
+        Builds the tree
+        """
         child_list = []
         child_p = p * (-1)
 
@@ -239,6 +277,11 @@ class MinMaxMove:
                 self._build_tree(c, child_state, child_p, level-1)
 
     def _max_node_util(self, node):
+        """
+        :param node: node
+        :return: min max value
+        recursive method to determine the utility function for current node
+        """
         if node in self._util_dict:
             self._min_max_dict[node] = self._util_dict[node]
             return self._util_dict[node]
@@ -251,6 +294,11 @@ class MinMaxMove:
         return mmv
 
     def _min_node_util(self, node):
+        """
+        :param node: node
+        :return: min max value
+        recursive method to determine the utility function for current node
+        """
         if node in self._util_dict:
             self._min_max_dict[node] = self._util_dict[node]
             return self._util_dict[node]
@@ -263,6 +311,14 @@ class MinMaxMove:
         return mmv
 
     def __call__(self, S, p):
+        """
+        :param S: current state
+        :param p: current player
+        Makes a move for player p from state S.
+        Actually this method builds the tree for current state S and player p.
+        Then, runs the recursive methods to calculate min_max_dict values.
+        Depending on current player the algorithm choses the next move.
+        """
         self._node_dict = {}
         self._child_dict = {}
         self._util_dict = {}
@@ -290,59 +346,59 @@ class MinMaxMove:
 if __name__ == '__main__':
     min_max_move = MinMaxMove(level=2)
 
-    games = 100
-    trainings = 100
+    games = 10000
+    trainings = 10000
     field_st, player_st = train(n=trainings)
     for k, v in field_st.items():
         logger.info('Game statistics matrix for %s' % k)
         print_game_state(v)
 
-    # tournament(n=games,
-    #            x_strategy='probabilistic',
-    #            o_strategy='probabilistic',
-    #            x_stat=field_st[1],
-    #            o_stat=field_st[-1])
-    #
-    # tournament(n=games,
-    #            x_strategy='probabilistic',
-    #            o_strategy='random',
-    #            x_stat=field_st[1],
-    #            o_stat=field_st[-1])
-    #
-    # tournament(n=games,
-    #            x_strategy='probabilistic',
-    #            o_strategy='min_max',
-    #            x_stat=field_st[1],
-    #            o_stat=field_st[-1])
+    tournament(n=games,
+               x_strategy='probabilistic',
+               o_strategy='probabilistic',
+               x_stat=field_st[1],
+               o_stat=field_st[-1])
 
-    # tournament(n=games,
-    #            x_strategy='min_max',
-    #            o_strategy='min_max')
-    #
-    # tournament(n=games,
-    #            x_strategy='min_max',
-    #            o_strategy='probabilistic',
-    #            x_stat=field_st[1],
-    #            o_stat=field_st[-1])
+    tournament(n=games,
+               x_strategy='probabilistic',
+               o_strategy='random',
+               x_stat=field_st[1],
+               o_stat=field_st[-1])
 
-    # tournament(n=games,
-    #            x_strategy='min_max',
-    #            o_strategy='random')
+    tournament(n=games,
+               x_strategy='probabilistic',
+               o_strategy='min_max',
+               x_stat=field_st[1],
+               o_stat=field_st[-1])
 
-    # tournament(n=games,
-    #            x_strategy='random',
-    #            o_strategy='random')
-    #
-    # tournament(n=games,
-    #            x_strategy='random',
-    #            o_strategy='probabilistic',
-    #            x_stat=field_st[1],
-    #            o_stat=field_st[-1])
+    tournament(n=games,
+               x_strategy='min_max',
+               o_strategy='min_max')
+
+    tournament(n=games,
+               x_strategy='min_max',
+               o_strategy='probabilistic',
+               x_stat=field_st[1],
+               o_stat=field_st[-1])
+
+    tournament(n=games,
+               x_strategy='min_max',
+               o_strategy='random')
+
+    tournament(n=games,
+               x_strategy='random',
+               o_strategy='random')
+
+    tournament(n=games,
+               x_strategy='random',
+               o_strategy='probabilistic',
+               x_stat=field_st[1],
+               o_stat=field_st[-1])
 
 
-    # tournament(n=games,
-    #            x_strategy='random',
-    #            o_strategy='min_max')
+    tournament(n=games,
+               x_strategy='random',
+               o_strategy='min_max')
 
 
 
