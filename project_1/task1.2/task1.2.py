@@ -4,10 +4,8 @@ import logging
 
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.ticker import FuncFormatter
 
 
-from tree_plotter import graphVis
 plots_folder = 'plots'
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout,
@@ -22,9 +20,6 @@ def move_still_possible(S):
 def move(S, p, stat, strategy):
     if strategy == 'probabilistic':
         return move_at_probabilistic(S, p, stat)
-
-    elif strategy == 'full_tree':
-        return full_tree_move(S, p)
 
     elif strategy == 'min_max':
         return min_max_move(S, p)
@@ -86,6 +81,7 @@ def print_game_state(S):
     for n in [-1, 0, 1]:
         B[B == n] = symbols[n]
     print B
+
 
 def plot_temperature_map(n, stat, img_name='temperature_map.png'):
     global plots_folder
@@ -157,7 +153,6 @@ def train(n=10):
     logger.info('Start training')
     field_st, player_st = play(n)
 
-
     plot_game_stat(n, 'random', 'random', player_st, 'training.png')
 
     # normalize the array with statistic
@@ -172,7 +167,6 @@ def train(n=10):
 
 
 def game(x_strategy, o_strategy, x_stat, o_stat):
-    global full_tree_move
 
     inv_symbols = {v: k for k, v in symbols.items()}
     strategy_dict = {inv_symbols['x']: x_strategy, inv_symbols['o']: o_strategy}
@@ -187,9 +181,6 @@ def game(x_strategy, o_strategy, x_stat, o_stat):
 
     # initialize flag that indicates win
     noWinnerYet = True
-
-    # new tutorial should look for state from root
-    full_tree_move.current_node = None
 
     while move_still_possible(game_state) and noWinnerYet:
         # get player symbol
@@ -214,87 +205,6 @@ def game(x_strategy, o_strategy, x_stat, o_stat):
         logger.debug('game ended in a draw')
         return 0, game_state
 
-
-class Node:
-    def __init__(self, p, S=None, child_list=[], winner=None):
-        self.S = np.zeros((3, 3), dtype=int) if S is None else S
-        self.child_list = child_list
-        self.p = p
-        self.winner = winner
-
-    def __repr__(self):
-        return 'Node, Player=%s, Winner=%s, Childs=%s' % \
-               (self.p, self.winner, len(self.child_list))
-
-    def max_gain(self, p):
-        # if player is o then reverse the child list
-        # if player is x then do not reverse child list
-        reverse = p != (-1)
-        # sort child list by max gain
-        # the max gain children should be in the beginning
-        for c in sorted(self.child_list, key=lambda n: n.winner, reverse=reverse):
-            # next move leads to win
-            if c.winner == p:
-                return c
-            # next move leads to draw
-            if c.winner == 0:
-                return c
-            # player loses for sure, no chances to win or draw
-            return c
-
-
-class Tree:
-    def __init__(self, p, S=None):
-        self.root = Node(p, np.copy(S))
-
-    def plot_layer(self, max_depth):
-        self._plot_layer(self.root, 0, max_depth)
-
-    def _plot_layer(self, node, current_depth, max_depth):
-        current_depth += 1
-        if current_depth < max_depth:
-            for c in node.child_list:
-                self._plot_layer(c, current_depth, max_depth)
-        if current_depth == max_depth:
-            print(node)
-        if current_depth > max_depth:
-            return
-
-    def pre_traverse(self):
-        self._pre_traverse(self.root, depth=0)
-
-    def _pre_traverse(self, node, depth):
-
-        print('%s| %s| %s| %s' % ('   '*depth, node.p, node.winner, depth))
-        depth += 1
-        if node.child_list:
-            for c in node.child_list:
-                self._pre_traverse(c, depth)
-
-    def build_tree(self):
-        self._build_tree(self.root)
-
-    def _build_tree(self, node):
-
-        previous_player = node.p * (-1)
-        if move_was_winning_move(node.S, previous_player):
-            node.winner = previous_player
-            return
-
-        else:
-            xs, ys = np.where(node.S == 0)
-            for i in xrange(xs.size):
-                Child = np.copy(node.S)
-                Child[xs[i], ys[i]] = node.p
-                child_node = Node(node.p * (-1), Child, child_list=[])
-                node.child_list.append(child_node)
-        if not node.child_list:
-            # draw
-            node.winner = 0
-            return
-
-        for c in node.child_list:
-            self._build_tree(c)
 
     def mark_nodes(self):
         """
@@ -348,44 +258,6 @@ class Tree:
             node = self.find_state(c, S)
             if node:
                 return node
-
-
-class FullTreeMove:
-    def __init__(self):
-        self.tree = None
-        self.current_node = None
-
-    def init_tree(self, S, p):
-        self.tree = Tree(p, S)
-        self.tree.build_tree()
-        self.tree.mark_nodes()
-        # self.tree.pre_traverse()
-        # graphVis(self.tree, tree_csv)
-
-    def __call__(self, S, p):
-        # build tree if does not exists
-        if not self.tree:
-            self.init_tree(S, p)
-
-        # find node that represents current game state
-        # save it as current node
-        if not self.current_node:
-            self.current_node = self.tree.find_state(self.tree.root, S)
-        # if np.array_equal(S, np.zeros((3,3), ))
-        # find the max gain node for the next step
-
-        try:
-            self.current_node = self.tree.\
-                find_state(self.current_node, S).max_gain(p)
-        except Exception as e:
-            logger.warning('Not found state for root')
-            logger.warning(p)
-            logger.warning(self.tree.root.S)
-            print_game_state(S)
-            print(e)
-
-        np.copyto(S, self.current_node.S)
-        return S
 
 
 class MinMaxMove:
@@ -473,11 +345,10 @@ class MinMaxMove:
 
 
 if __name__ == '__main__':
-    full_tree_move = FullTreeMove()
     min_max_move = MinMaxMove(level=2)
 
-    games = 10000
-    trainings = 10000
+    games = 100
+    trainings = 100
     field_st, player_st = train(n=trainings)
     for k, v in field_st.items():
         logger.info('Game statistics matrix for %s' % k)
@@ -530,36 +401,6 @@ if __name__ == '__main__':
     #            x_strategy='random',
     #            o_strategy='min_max')
 
-
-
-    # tournament(n=games,
-    #            x_strategy='probabilistic',
-    #            o_strategy='full_tree',
-    #            x_stat=field_st[1],
-    #            o_stat=field_st[-1])
-
-    # tournament(n=games,
-    #            x_strategy='min_max',
-    #            o_strategy='full_tree')
-
-    #
-    # tournament(n=games,
-    #            x_strategy='full_tree',
-    #            o_strategy='random')
-
-    # tournament(n=games,
-    #            x_strategy='full_tree',
-    #            o_strategy='min_max')
-
-    # tournament(n=games,
-    #            x_strategy='min_max',
-    #            o_strategy='full_tree')
-
-    # tournament(n=games,
-    #            x_strategy='full_time',
-    #            o_strategy='probabilistic',
-    #            x_stat=field_st[1],
-    #            o_stat=field_st[-1])
 
 
 
