@@ -90,10 +90,7 @@ def plot_temperature_map(n, stat, img_name='temperature_map.png'):
                             plots_folder, img_name)
 
     plt.figure(figsize=(20, 10))
-    logger.info('stat sum=%s' % np.sum(stat))
-    coef = 1./np.sum(stat)
-    logger.info('coef=%s' % coef)
-    logger.info('stat * coef %s' % (stat * coef))
+
     plt.imshow(stat, vmin=0, vmax=1, extent=[0, 3, 0, 3])
     plt.colorbar()
     plt.savefig(img_path, facecolor='w', edgecolor='w',
@@ -204,60 +201,6 @@ def game(x_strategy, o_strategy, x_stat, o_stat):
     if noWinnerYet:
         logger.debug('game ended in a draw')
         return 0, game_state
-
-
-    def mark_nodes(self):
-        """
-        Sets winner to node.
-        winner = 1 for x
-        winner = 0 for draw
-        winner = -1 for o
-        """
-        self._mark_nodes(self.root)
-
-    def _mark_nodes(self, node):
-
-        if node.winner:
-            return node.winner
-
-        result_list = []
-        for c in node.child_list:
-            winner = self._mark_nodes(c)
-            if winner and winner not in result_list:
-                result_list.append(winner)
-
-        if node.p in result_list:
-            node.winner = node.p
-
-        elif 0 in result_list:
-            node.winner = 0
-
-        elif node.p * (-1) in result_list:
-            node.winner = node.p * (-1)
-
-        return node.winner
-
-    def print_tree(self):
-        self._print_tree(self.root)
-
-    @classmethod
-    def _print_tree(cls, node):
-        print_game_state(node.S)
-        for c in node.child_list:
-            cls._print_tree(c)
-
-    def find_state(self, node, S):
-        if np.array_equal(node.S, S):
-            return node
-
-        for c in node.child_list:
-            if np.array_equal(c.S, S):
-                return node
-
-        for c in node.child_list:
-            node = self.find_state(c, S)
-            if node:
-                return node
 
 
 class MinMaxMove:
