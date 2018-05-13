@@ -1,6 +1,10 @@
 #! /usr/bin/env python3
 
+# GUI taken from https://github.com/uroshekic/connect-four
+
 from Tkinter import *
+
+
 from connect_four_game import ConnectFourGame
 
 class GUI:
@@ -11,14 +15,18 @@ class GUI:
     p2Color = "#FF1A00"
     backgroundColor = "#FFFFFF"
     gameOn = False
+    singlePlayer = False
     
     def __init__(self, master):
         self.master = master
 
         master.title('Connect Four')
-        
-        label = Label(master, text="")
-        label.grid(row=0)
+
+        w = Checkbutton(master, text="Single player", command=self._singlePlayer)
+        w.grid(row=0)
+
+        # label = Label(master, text="")
+        # label.grid(row=0)
 
         button = Button(master, text="New Game!", command=self._newGameButton)
         button.grid(row=1)
@@ -112,6 +120,7 @@ class GUI:
             t = winner + ' won!'
             self.gameOn = False
             self.canvas.create_text(x, y, text=t, font=("Helvetica", 32), fill="#333")
+            return
 
         if not self.game.move_still_possible():
             x = self.canvas.winfo_width() // 2
@@ -119,12 +128,42 @@ class GUI:
             self.gameOn = False
             self.canvas.create_text(x, y, text="DRAW", font=("Helvetica", 32),
                                     fill="#333")
+            return
 
         self.player *= -1
         self._updateCurrentPlayer()
+        if self.singlePlayer:
+
+            self.game.make_move(self.player)
+            self.draw()
+            if self.game.move_was_winning_move():
+                x = self.canvas.winfo_width() // 2
+                y = self.canvas.winfo_height() // 2
+
+                winner = self.p1 if self.player == 1 else self.p2
+                t = winner + ' won!'
+                self.gameOn = False
+                self.canvas.create_text(x, y, text=t, font=("Helvetica", 32),
+                                        fill="#333")
+                return
+
+            if not self.game.move_still_possible():
+                x = self.canvas.winfo_width() // 2
+                y = self.canvas.winfo_height() // 2
+                self.gameOn = False
+                self.canvas.create_text(x, y, text="DRAW",
+                                        font=("Helvetica", 32),
+                                        fill="#333")
+                return
+
+            self.player *= -1
+            self._updateCurrentPlayer()
 
     def _newGameButton(self):
         self.newGame()
+
+    def _singlePlayer(self):
+        self.singlePlayer = not self.singlePlayer
 
 root = Tk()
 app = GUI(root)
