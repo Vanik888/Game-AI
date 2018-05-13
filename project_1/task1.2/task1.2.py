@@ -94,8 +94,8 @@ def plot_temperature_map(n, stat, img_name='temperature_map.png'):
                             plots_folder, img_name)
 
     plt.figure(figsize=(20, 10))
-    coef = 100.0/stat.max()
-    plt.imshow(stat * coef, vmin=0, vmax=100)
+    coef = 1./stat.max()
+    plt.imshow(stat * coef, vmin=0, vmax=1)
     plt.colorbar()
     plt.savefig(img_path, facecolor='w', edgecolor='w',
                     papertype=None, format='png', transparent=False,
@@ -473,6 +473,10 @@ if __name__ == '__main__':
     games = 100
     trainings = 1000
     field_st, player_st = train(n=trainings)
+    for k, v in field_st.items():
+        logger.info('Game statistics matrix for %s' % k)
+        print_game_state(v)
+
     tournament(n=games,
                x_strategy='intelligent',
                o_strategy='intelligent',
