@@ -1,30 +1,5 @@
-import numpy as np
 from connect_four_game import ConnectFourGame
 from constants import *
-
-
-def test_run():
-    game = ConnectFourGame()
-    game.print_game_state()
-
-    game.make_move(1, 0)
-    game.make_move(1, 0)
-    game.make_move(1, 1)
-    game.make_move(1, 1)
-    game.make_move(1, 1)
-    game.make_move(-1, 2)
-    game.make_move(1, 2)
-    game.make_move(1, 2)
-    game.make_move(1, 2)
-    game.make_move(-1, 3)
-    game.make_move(-1, 3)
-    game.make_move(1, 3)
-    game.make_move(1, 3)
-    game.make_move(1, 3)
-    # game.make_move(1, 4)
-    # game.make_move(1, 5)
-    # game.make_move(1, 6)
-    game.print_game_state()
 
 
 def run_random_game():
@@ -62,5 +37,4 @@ def run_random_game():
 
 
 if __name__ == '__main__':
-    print __name__
     run_random_game()

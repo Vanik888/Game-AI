@@ -20,8 +20,8 @@ def move_still_possible(S):
 
 
 def move(S, p, stat, strategy):
-    if strategy == 'intelligent':
-        return move_at_intelligent(S, p, stat)
+    if strategy == 'probabilistic':
+        return move_at_probabilistic(S, p, stat)
 
     elif strategy == 'full_tree':
         return full_tree_move(S, p)
@@ -33,7 +33,7 @@ def move(S, p, stat, strategy):
         return move_at_random(S, p)
 
 
-def move_at_intelligent(S, p, stat):
+def move_at_probabilistic(S, p, stat):
     # (s == 0).astype(int) keeps only empty places in field
     intersection = ((S==0).astype(int) * stat)
 
@@ -94,8 +94,11 @@ def plot_temperature_map(n, stat, img_name='temperature_map.png'):
                             plots_folder, img_name)
 
     plt.figure(figsize=(20, 10))
-    coef = 1./stat.max()
-    plt.imshow(stat * coef, vmin=0, vmax=1)
+    logger.info('stat sum=%s' % np.sum(stat))
+    coef = 1./np.sum(stat)
+    logger.info('coef=%s' % coef)
+    logger.info('stat * coef %s' % (stat * coef))
+    plt.imshow(stat, vmin=0, vmax=1, extent=[0, 3, 0, 3])
     plt.colorbar()
     plt.savefig(img_path, facecolor='w', edgecolor='w',
                     papertype=None, format='png', transparent=False,
@@ -154,12 +157,15 @@ def train(n=10):
     logger.info('Start training')
     field_st, player_st = play(n)
 
+
     plot_game_stat(n, 'random', 'random', player_st, 'training.png')
-    plot_temperature_map(n, field_st[-1], 'x_wins_map.png')
-    plot_temperature_map(n, field_st[1], 'o_wins_map.png')
+
     # normalize the array with statistic
     for k, v in field_st.items():
         field_st[k] = v / np.sum(v).astype(float)
+
+    plot_temperature_map(n, field_st[-1], 'x_wins_map.png')
+    plot_temperature_map(n, field_st[1], 'o_wins_map.png')
     logger.info('Finish training')
     logger.info('Train statistics %s' % player_st)
     return field_st, player_st
@@ -470,64 +476,64 @@ if __name__ == '__main__':
     full_tree_move = FullTreeMove()
     min_max_move = MinMaxMove(level=2)
 
-    games = 100
-    trainings = 1000
+    games = 10000
+    trainings = 10000
     field_st, player_st = train(n=trainings)
     for k, v in field_st.items():
         logger.info('Game statistics matrix for %s' % k)
         print_game_state(v)
 
-    tournament(n=games,
-               x_strategy='intelligent',
-               o_strategy='intelligent',
-               x_stat=field_st[1],
-               o_stat=field_st[-1])
+    # tournament(n=games,
+    #            x_strategy='probabilistic',
+    #            o_strategy='probabilistic',
+    #            x_stat=field_st[1],
+    #            o_stat=field_st[-1])
+    #
+    # tournament(n=games,
+    #            x_strategy='probabilistic',
+    #            o_strategy='random',
+    #            x_stat=field_st[1],
+    #            o_stat=field_st[-1])
+    #
+    # tournament(n=games,
+    #            x_strategy='probabilistic',
+    #            o_strategy='min_max',
+    #            x_stat=field_st[1],
+    #            o_stat=field_st[-1])
 
-    tournament(n=games,
-               x_strategy='intelligent',
-               o_strategy='random',
-               x_stat=field_st[1],
-               o_stat=field_st[-1])
+    # tournament(n=games,
+    #            x_strategy='min_max',
+    #            o_strategy='min_max')
+    #
+    # tournament(n=games,
+    #            x_strategy='min_max',
+    #            o_strategy='probabilistic',
+    #            x_stat=field_st[1],
+    #            o_stat=field_st[-1])
 
-    tournament(n=games,
-               x_strategy='intelligent',
-               o_strategy='min_max',
-               x_stat=field_st[1],
-               o_stat=field_st[-1])
+    # tournament(n=games,
+    #            x_strategy='min_max',
+    #            o_strategy='random')
 
-    tournament(n=games,
-               x_strategy='min_max',
-               o_strategy='min_max')
-
-    tournament(n=games,
-               x_strategy='min_max',
-               o_strategy='intelligent',
-               x_stat=field_st[1],
-               o_stat=field_st[-1])
-
-    tournament(n=games,
-               x_strategy='min_max',
-               o_strategy='random')
-
-    tournament(n=games,
-               x_strategy='random',
-               o_strategy='random')
-
-    tournament(n=games,
-               x_strategy='random',
-               o_strategy='intelligent',
-               x_stat=field_st[1],
-               o_stat=field_st[-1])
+    # tournament(n=games,
+    #            x_strategy='random',
+    #            o_strategy='random')
+    #
+    # tournament(n=games,
+    #            x_strategy='random',
+    #            o_strategy='probabilistic',
+    #            x_stat=field_st[1],
+    #            o_stat=field_st[-1])
 
 
-    tournament(n=games,
-               x_strategy='random',
-               o_strategy='min_max')
+    # tournament(n=games,
+    #            x_strategy='random',
+    #            o_strategy='min_max')
 
 
 
     # tournament(n=games,
-    #            x_strategy='intelligent',
+    #            x_strategy='probabilistic',
     #            o_strategy='full_tree',
     #            x_stat=field_st[1],
     #            o_stat=field_st[-1])
@@ -551,7 +557,7 @@ if __name__ == '__main__':
 
     # tournament(n=games,
     #            x_strategy='full_time',
-    #            o_strategy='intelligent',
+    #            o_strategy='probabilistic',
     #            x_stat=field_st[1],
     #            o_stat=field_st[-1])
 

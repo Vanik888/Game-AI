@@ -41,6 +41,7 @@ class GUI:
         self.canvas.bind('<Button-1>', self._canvasClick)
         self.newGame()
 
+    """Update UI according to current game state"""
     def draw(self):       
         for c in range(self.game.game_state.shape[1]):
             for r in range(self.game.game_state.shape[0]):
@@ -58,6 +59,7 @@ class GUI:
                                         self.canvas.winfo_height() - (y1 + 2),
                                         fill = fill, outline=self.gridColor)
 
+    """Draw game grid"""
     def drawGrid(self):
         x0, x1 = 0, self.canvas.winfo_width()
         for r in range(1, self.game.game_state.shape[0]):
@@ -69,6 +71,7 @@ class GUI:
             x = c*self.elementSize
             self.canvas.create_line(x, y0, x, y1, fill=self.gridColor)
 
+    """Make a move"""
     def drop(self, column):
         return self.game.make_move(self.player, column)
 
@@ -92,7 +95,7 @@ class GUI:
         self.gameOn = True
         self._updateCurrentPlayer()
 
-
+    """Change current player"""
     def _updateCurrentPlayer(self):
         if self.gameOn:
             p = self.p1 if self.player == 1 else self.p2
@@ -100,18 +103,20 @@ class GUI:
         else:
             self.currentPlayerVar.set('')
 
+    """Handle user clicks to certain column"""
     def _canvasClick(self, event):
         if not self.gameOn: return
         if not self.game.move_still_possible(): return
         
         c = event.x // self.elementSize
-        
+
+        # One of the columns was clicked
         if (0 <= c < self.game.game_state.shape[1]):
             desired_row = self.drop(c)
             if desired_row == -1:
                 return
             self.draw()
-
+        # Checking is there a winner
         if self.game.move_was_winning_move():
             x = self.canvas.winfo_width() // 2
             y = self.canvas.winfo_height() // 2
@@ -121,7 +126,7 @@ class GUI:
             self.gameOn = False
             self.canvas.create_text(x, y, text=t, font=("Helvetica", 32), fill="#333")
             return
-
+        # Checking whether all cells of the game matrix are occupied
         if not self.game.move_still_possible():
             x = self.canvas.winfo_width() // 2
             y = self.canvas.winfo_height() // 2

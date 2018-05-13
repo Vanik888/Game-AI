@@ -55,7 +55,6 @@ class ConnectFourGame:
             best_pos = self.__select_column_at_random()
         return best_pos
 
-
     """This method checks whether one player has won the game"""
     def move_was_winning_move(self):
 
@@ -73,20 +72,19 @@ class ConnectFourGame:
             if self.__check_all_sublists(column_to_check):
                 return True
 
-
-        # Check all diagonals of length at least 4
-        # if there is a winning combination
+        # Check diagonal, where item was inserted
         diag_to_check = self.last_inserted_column - self.last_inserted_row
         diagonal = self.game_state.diagonal(diag_to_check)
-        if len(diagonal) >= 4 and (diagonal == 0).sum() <= 3:
+        if len(diagonal) >= winning_sum and (diagonal == 0).sum() <= 3:
             if self.__check_all_sublists(diagonal):
                 return True
 
-        # Check all non-main diagonals of length at least 4
-        # if there is a winning combination
-        rot_diag_to_check = self.last_inserted_column + self.last_inserted_row - n_columns + 1
+        # Check diagonal of rotated matrix, where item was inserted
+        rot_diag_to_check = (self.last_inserted_column +
+                             self.last_inserted_row -
+                             n_columns + 1)
         diagonal = np.rot90(self.game_state).diagonal(rot_diag_to_check)
-        if len(diagonal) >= 4 and (diagonal == 0).sum() <= 3:
+        if len(diagonal) >= winning_sum and (diagonal == 0).sum() <= 3:
             if self.__check_all_sublists(diagonal):
                 return True
         return False
