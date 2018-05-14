@@ -125,9 +125,13 @@ def plot_game_stat(n, x_strategy, o_strategy, player_st, img_name=''):
 
     x = np.arange(3)
     data = [x_win, x_lose, draw]
+    ymin, ymax = 0, n*1.05
+    plt.ylim(ymin, ymax)
+
     plt.bar(x, data, color=['r', 'y', 'b'])
     plt.xticks(x, ('X', 'O', 'Draw'))
     plt.title('X uses %s, O uses %s' % (x_strategy, o_strategy))
+    plt.grid(axis='y', alpha=0.4)
 
 
     plt.savefig(img_path, facecolor='w', edgecolor='w',
