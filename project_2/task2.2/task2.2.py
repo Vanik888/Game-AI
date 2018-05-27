@@ -1,4 +1,12 @@
+import sys
+import logging
+
 from trees import tree1, values1, tree2, values2
+from plotter import plotter
+
+logging.basicConfig(level=logging.INFO, stream=sys.stdout,
+                    format='%(levelname)s | %(asctime)s | %(message)s')
+logger = logging.getLogger('Logger from Task 2.2')
 
 
 class Node:
@@ -17,7 +25,7 @@ class Tree:
 
     def build_tree_from_dict(self, struct, values):
         sorted_dict = dict(sorted(struct.items(), key=lambda kv: kv[0]))
-        root_name = sorted_dict.keys()[0]
+        root_name = list(sorted_dict.keys())[0]
 
         self._build_tree_from_dict(sorted_dict, values, root_name)
 
@@ -71,8 +79,16 @@ class Tree:
 
 
 if __name__ == '__main__':
-    tr = Tree()
-    tr.build_tree_from_dict(tree1, values1)
-    tr.pretraverse()
-    tr.min_max()
-    tr.pretraverse()
+    tr1 = Tree()
+    tr1.build_tree_from_dict(tree1, values1)
+    tr1.pretraverse()
+    tr1.min_max()
+    tr1.pretraverse()
+    logger.info('Tree 2:')
+    tr2 = Tree()
+    tr2.build_tree_from_dict(tree2, values2)
+    tr2.pretraverse()
+    tr2.min_max()
+    tr2.pretraverse()
+    plotter(tr1, 'tree1')
+    plotter(tr2, 'tree2')
