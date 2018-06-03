@@ -8,3 +8,5 @@ n_columns = 7
 # sum, which is enough for winning the game
 winning_sum = 4
 
+diagonal_shifts = xrange(-2, 4, 1)
+

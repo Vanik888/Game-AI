@@ -3,11 +3,16 @@ from constants import *
 
 
 class ConnectFourGame:
-    def __init__(self):
+    def __init__(self,
+                 level=2,
+                 x_stat=np.zeros((n_rows, n_columns), dtype=int),
+                 o_stat=np.zeros((n_rows, n_columns), dtype=int)):
         self.game_state = np.zeros((n_rows, n_columns), dtype=int)
         self.last_inserted_column = -1
         self.last_inserted_row = -1
-        self.level = 2
+        self.level = level
+        self.x_stat = x_stat
+        self.o_stat = o_stat
 
     """Prints current game state"""
     def print_game_state(self):
@@ -64,7 +69,10 @@ class ConnectFourGame:
         # If an empty cell was found
         if desired_row != -1:
             s[desired_row, column] = p
-
+        else:
+            print "not found"
+            self.print_game_state()
+            self.print_matrix(s)
         return s
 
     """This method chooses best possible move
@@ -82,6 +90,75 @@ class ConnectFourGame:
 
     """This method checks whether one player has won the game"""
     def move_was_winning_move(self, p):
+
+        # Check all rows if there is a winning combination
+        # for i in range(n_rows):
+        row_to_check = self.game_state[self.last_inserted_row, :]
+        if (row_to_check == 0).sum() <= 3:
+            if self.__check_all_sublists(row_to_check, p):
+                return True
+
+        # Check all columns if there is a winning combination
+        # for i in range(n_columns):
+        column_to_check = self.game_state[:, self.last_inserted_column]
+        if (column_to_check == 0).sum() <= 3:
+            if self.__check_all_sublists(column_to_check, p):
+                return True
+
+        # Check diagonal, where item was inserted
+        diag_to_check = self.last_inserted_column - self.last_inserted_row
+        diagonal = self.game_state.diagonal(diag_to_check)
+        if len(diagonal) >= winning_sum and (diagonal == 0).sum() <= 3:
+            if self.__check_all_sublists(diagonal, p):
+                return True
+
+        # Check diagonal of rotated matrix, where item was inserted
+        rot_diag_to_check = (self.last_inserted_column +
+                             self.last_inserted_row -
+                             n_columns + 1)
+        diagonal = np.rot90(self.game_state).diagonal(rot_diag_to_check)
+        if len(diagonal) >= winning_sum and (diagonal == 0).sum() <= 3:
+            if self.__check_all_sublists(diagonal, p):
+                return True
+        return False
+
+    """This method checks whether one player has won the game"""
+    def move_was_winning_move_for_matrix(self, S, p):
+
+        # Check all rows if there is a winning combination
+        # for i in range(n_rows):
+        for i in xrange(S.shape[0]):
+            row_to_check = S[i, :]
+            if (row_to_check == 0).sum() <= 3:
+                if self.__check_all_sublists(row_to_check, p):
+                    return True
+
+        # Check all columns if there is a winning combination
+        # for i in range(n_columns):
+        for i in xrange(S.shape[1]):
+            column_to_check = S[:, i]
+            if (column_to_check == 0).sum() <= 3:
+                if self.__check_all_sublists(column_to_check, p):
+                    return True
+
+        # Check diagonal, where item was inserted
+        for i in diagonal_shifts:
+            diagonal = self.game_state.diagonal(i)
+            if len(diagonal) >= winning_sum and (diagonal == 0).sum() <= 3:
+                if self.__check_all_sublists(diagonal, p):
+                    return True
+
+        # Check diagonal of rotated matrix, where item was inserted
+        for i in diagonal_shifts:
+            diagonal = np.rot90(S).diagonal(i - 1)
+            if len(diagonal) >= winning_sum and (diagonal == 0).sum() <= 3:
+                if self.__check_all_sublists(diagonal, p):
+                    return True
+        return False
+
+    """This method checks whether one player has won the game"""
+
+    def move_was_winning_move_for_whole_matrix(self, p):
 
         # Check all rows if there is a winning combination
         # for i in range(n_rows):
@@ -132,13 +209,17 @@ class ConnectFourGame:
     def move_still_possible(self):
         return not (self.game_state[self.game_state == 0].size == 0)
 
+    """Checks whether there are still empty cells in matrix"""
+    def move_still_possible_for_matrix(self, S):
+        return not (S[S == 0].size == 0)
+
     """Returns index of randomly chosen column for element insertion"""
     def __select_column_at_random(self):
         xs, ys = np.where(self.game_state == 0)
         i = np.random.permutation(np.arange(ys.size))[0]
         return ys[i]
 
-    def _utitlity_function(self, p):
+    def _utitlity_function(self, S, p):
         """
         :param S: current state
         :param p: current player
@@ -151,14 +232,24 @@ class ConnectFourGame:
         if o moves and game is not finished, set utility to -0.5,
          asuming that o might win later (be positive in predictions)
         """
-        if self.move_was_winning_move(p):
+        if self.move_was_winning_move_for_matrix(S, p):
             return p
-        if self.move_was_winning_move(p * (-1)):
+        if self.move_was_winning_move_for_matrix(S, p * (-1)):
             return p * (-1)
-        if not self.move_still_possible():
+        if not self.move_still_possible_for_matrix(S):
             return 0
         # this state can lead to win as well as to lose, therefore
-        return 0.5 * p
+        max_sum = 0.0
+        min_sum = 0.0
+        xs_max, ys_max = np.where(S == 1)
+        for i in xrange(len(xs_max)):
+            max_sum += self.x_stat[xs_max[i]][ys_max[i]]
+        xs_min, ys_min = np.where(S == -1)
+        for i in xrange(len(xs_min)):
+            min_sum += self.x_stat[xs_min[i]][ys_min[i]]
+        return max_sum - min_sum
+        # this state can lead to win as well as to lose, therefore
+        # return 0.5 * p
 
     def _build_tree(self, node, S, p, level):
         """
@@ -172,16 +263,16 @@ class ConnectFourGame:
         child_p = p * (-1)
 
         if level == 0:
-            self._util_dict[node] = self._utitlity_function(p)
+            self._util_dict[node] = self._utitlity_function(S, p)
 
         else:
             xs, ys = np.where(S == 0)
-            columns = list(set(ys))
+            columns = np.unique(ys)
             for i in xrange(len(columns)):
                 new_node = max(self._node_dict.keys()) + 1
                 child_state = np.copy(S)
-                child_state = self.make_move_for_children(child_state, p, i)
-                self._node_dict[new_node] = (child_state, child_p)
+                child_state1 = self.make_move_for_children(child_state, p, columns[i])
+                self._node_dict[new_node] = (child_state1, child_p)
                 child_list.append(new_node)
 
             self._child_dict[node] = child_list
@@ -223,7 +314,7 @@ class ConnectFourGame:
         self._min_max_dict[node] = mmv
         return mmv
 
-    def make_min_max_move(self, S, p):
+    def make_min_max_move(self, p):
         """
         :param S: current state
         :param p: current player
