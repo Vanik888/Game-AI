@@ -1,8 +1,9 @@
 import numpy as np
 from tGame import TGame
 from tTree import TNode, TTree
-import time
+import time, os
 import pickle
+from treeExplorer import TExplorer
 
 # relate numbers (1, -1, 0) to symbols ('x', 'o', ' ')
 symbols = {1:'X', -1:'O', 0:'--'}
@@ -34,33 +35,61 @@ def getRandomMove(g):
     return [xs[i], ys[i]]
 
 if __name__ == '__main__':
-    # Game initialization
-    g = TGame()
-    tree = TTree(2)
-
-    # Block for building tree
-    print('Building tree...')
-    ts = time.time()
-    tree.buildTree(g)
-    print('-> ' + str(time.time() - ts))
     
+    DEPTH = 9 # Depth of game tree: 9 - max
+    STATISTICS = False # use 'stat=True' to get statistics information during loading (slow)
+    
+    tree = TTree(DEPTH)
+    filename = 'tree' + str(DEPTH) + '.ttt'
+    if os.path.isfile(filename):
+        # Block for loading tree from disk
+        print('Loading tree from file... (depth = ' + str(tree.maxDepth) + ')')
+        ts = time.time()
+        tree = TTree.Open(path='tree'+str(tree.maxDepth)+'.ttt', stat=STATISTICS) 
+        print('-> ' + str(time.time() - ts))
+    else:
+        # Block for building tree
+        g = TGame()
+        print('Building tree... (depth = ' + str(tree.maxDepth) + ') This may take a while')
+        ts = time.time()
+        tree.buildTree(g)
+        print('-> ' + str(time.time() - ts))
+
+        # Block for saving tree to disk
+        print('Saving tree to the disk... (depth = ' + str(tree.maxDepth) + ')')
+        ts = time.time()
+        tree.save('tree'+str(tree.maxDepth)+'.ttt')
+        print('-> ' + str(time.time() - ts))
+    
+    if STATISTICS:
+        print('Number of nodes: ' + str(tree.uidCnt))
+        print('WhoWon histogram: ' + str(tree.whoWonCnt))
+        print('AVG branching factor: ' + str(tree.branchingFactor))
+
+    
+    # Explore tree in a viewer
+    treeViewer = TExplorer(tree)
+    treeViewer.run()
+    
+
+    ##### <PICKLE> #####
     ## Block for loading tree from disk
-    #print('Loading tree from file...')
+    #print('Loading tree from file... (depth = ' + str(tree.maxDepth) + ')')
     #ts = time.time()
     #with open('tree'+str(tree.maxDepth)+'.pkl') as f:
     #    tree = pickle.load(f)
     #print('-> ' + str(time.time() - ts))
-
-    print('Number of nodes: ' + str(tree.uidCnt))
-    print('WhoWon histogram: ' + str(tree.whoWonCnt))
     
     ## Block for saving tree to disk
-    #print('Saving tree to the disk...')
+    #print('Saving tree to the disk... (depth = ' + str(tree.maxDepth) + ')')
     #ts = time.time()
     #with open('tree'+str(tree.maxDepth)+'.pkl', 'w') as f:
     #    pickle.dump(tree, f)
     #print('-> ' + str(time.time() - ts))
+    ##### </PICKLE> #####
     
+
+
     ## Block for creating and saving to disk visualization of tree
     #print('GraphViz...')
     #ts = time.time()
@@ -68,6 +97,8 @@ if __name__ == '__main__':
     #print('-> ' + str(time.time() - ts))
 
     ## Block for testing game class
+    # Game initialization
+    #g = TGame()
     #while g.gameStatus == 2: # 2 means 'notFinished' - look into comment of g.gameStatus func
     #    print '%s moves' % symbols[g.state.curPlayer]
     #    g.nextMove(getRandomMove(g)) # randomly choosing next move

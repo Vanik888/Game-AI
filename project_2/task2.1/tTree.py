@@ -1,11 +1,11 @@
 import numpy as np
 import math as m
 import copy
-from tGame import TGame
+from tGame import TGame, TState
 from graphviz import Digraph
 
 class TNode(object):
-    """description of class"""
+    """ Node of TicTacToe Game Tree representation. Stores current state, links to parent and children. Provides save/open and toGraphViz functionality"""
 
     def __init__(self, uid = -1, s = None, p = None, ch = np.empty(0, dtype=object)):
         self.uid = uid
@@ -31,6 +31,20 @@ class TNode(object):
             c.toGraphViz(dot, depth + 1)
             dot.edge(str(self.uid), str(c.uid))
 
+    def save(self, fo):
+        def state2string():
+            res = ''
+            for i in self.state.mat:
+                for j in i:
+                    res += str(j + 1)
+            return res
+
+        fo.write(state2string() + str(self.children.size))
+
+        for c in self.children:
+            c.save(fo)
+
+
     #def __copy__(self):
     #    st = TState(self.state.mat.copy(), self.state.curPlayer)
     #    return TNode(st, self.parent, self.children.copy)
@@ -44,18 +58,26 @@ class TNode(object):
         
 
 class TTree(object):
-    """description of class"""
+    """ Main Tree class. Stores tree itself, some statistical information and provides build-tree, save/open and toGrtaphViz functionality"""
     
     def __init__(self, maxDepth = float('inf')):
         self.root = TNode()
         self.maxDepth = maxDepth
         self.uidCnt = 0
         self.whoWonCnt = {-1: 0, 0: 0, 1: 0, 2: 0}
-       
+        self.branchingFactor = 0.0
+        self.branchingCnt = 0
+    
+    # Entry point of recursively building tree
     def buildTree(self, game = None, depth = 0):
         """ Starting point of building tree """
-        self.root = self._buildTree(None, game, depth)
 
+        self.branchingFactor = 0.0
+        self.branchingCnt = 0
+        self.root = self._buildTree(None, game, depth)
+        self.branchingFactor /= self.branchingCnt
+
+    # Recursive function for building tree
     def _buildTree(self, parent, game, depth):
         game = game or TGame()
 
@@ -77,6 +99,8 @@ class TTree(object):
             cnt += 1
             resNode.children = np.append(resNode.children, self._buildTree(resNode, g, depth + 1))
         
+        self.branchingFactor += resNode.children.size
+        self.branchingCnt += 1
         return resNode
 
     def toGraphViz(self):
@@ -89,3 +113,45 @@ class TTree(object):
 
         print('Rendering GraphViz...')
         dot.render('tictactoeTree'+str(self.maxDepth)+'.gv', view=False)
+
+    def save(self, path):
+        fo = open(path, 'w')
+        self.root.save(fo)
+        fo.close()
+        
+    @staticmethod
+    def Open(path, stat = False):
+        def readBatch(fo):
+            mat = np.zeros(9)
+            st = fo.read(9)
+            for i, c in enumerate(st):
+                mat[i] = int(c) - 1
+            return np.reshape(mat, (3, 3)), int(fo.read(1))
+        def getNextNode(tree, fo, parent = None):
+            tree.uidCnt += 1
+            m, chN = readBatch(fo)
+            node = TNode(tree.uidCnt, TState(m), parent)
+            children = []
+            for i in range(chN):
+                child = getNextNode(tree, fo, node)
+                if stat:
+                    g = TGame(child.state)
+                    tree.whoWonCnt[g.gameStatus] += 1
+                children = np.append(children, child)
+            node.children = children
+            if chN > 0:
+                tree.branchingFactor += chN
+                tree.branchingCnt += 1
+            return node
+
+        fo = open(path, 'r')
+        tree = TTree()
+        
+        tree.uidCnt = 0
+        tree.branchingFactor = 0.0
+        tree.branchingCnt = 0
+        tree.root = getNextNode(tree, fo)
+        tree.branchingFactor /= tree.branchingCnt
+
+
+        return tree

@@ -1,7 +1,7 @@
 import numpy as np
 
 class BOPlayer(object):
-    """description of class"""
+    """ PLayer for Breakout """
     
     def __init__(self, maxDepth = 3, freq = 10, DBG = False):
         self.game = None
@@ -20,19 +20,21 @@ class BOPlayer(object):
         if self.lastBallRect is not None:
             if (np.absolute(self.dir) > self.game.bat_speed):
                 self.game.batrect = self.game.batrect.move(self.game.bat_speed * np.sign(self.dir), 0)
-
-        self.lastBallRect = self.game.ballrect
-        
+    
+    # This function starts recursively tracing rays and saves the last x coordinate in self.dir
     def calculate(self):
         if self.lastBallRect is not None:
             self.game.DBGlines = []
             self.dir = self.traceBall() - self.game.batrect.centerx
+        self.lastBallRect = self.game.ballrect
 
-    def traceBall(self, depth = 0):
+    # Entry point of recursion
+    def traceBall(self):
         ray = {'o': [self.lastBallRect.centerx, self.lastBallRect.centery], \
                'p': [self.game.ballrect.centerx, self.game.ballrect.centery] }
-        return self.traceRay(ray, depth)[0]
+        return self.game.ballrect.centerx if self.maxDepth == 0 else self.traceRay(ray, 0)[0]
     
+    # Recursion function
     def traceRay(self, ray, depth):
         if depth >= self.maxDepth: return None
         
@@ -40,10 +42,8 @@ class BOPlayer(object):
         # Check intersection with bat line
         point = self.intersectRayInterval(ray, [[0, self.game.batrect.top], [self.game.width, self.game.batrect.top]])
         if point is not None:
-            ##### <DEBUG> #####
             if self.DBG:
                 self.game.DBGlines.append([ray['o'], point])
-            ##### </DEBUG> #####
             return point
         
         # Check intersection with bricks
@@ -51,17 +51,15 @@ class BOPlayer(object):
             point, normal = self.intersectionPointBallWalls(ray)
 
         # Check intersection with boundaries
-        if point is None: point, normal = self.intersectRayInterval(ray, [[0, 0], [self.game.width, 0]]), [0, -1] # top
+        if point is None: point, normal = self.intersectRayInterval(ray, [[0, self.game.panelHeight], [self.game.width, self.game.panelHeight]]), [0, -1] # top
         if point is None: point, normal = self.intersectRayInterval(ray, [[0, 0], [0, self.game.height]]), [1, 0] # left
         if point is None: point, normal = self.intersectRayInterval(ray, [[self.game.width, 0], [self.game.width, self.game.height]]), [-1, 0] # right
 
         if point is None:
             return self.game.batrect.center
 
-        ##### <DEBUG> #####
         if self.DBG:
             self.game.DBGlines.append([ray['o'], point])
-        ##### </DEBUG> #####
 
         d = np.array(ray['p'])-np.array(ray['o'])
         n = np.array(normal)
@@ -73,6 +71,7 @@ class BOPlayer(object):
     def dstSqr(self, p1, p2):
         return np.power(p2[0] - p1[0], 2) + np.power(p2[1] - p1[1], 2)
 
+    # Intersect ray with walls (collection of bricks). Returns point of intersection and normal
     def intersectionPointBallWalls(self, ray):
         n = None
         pt = None
@@ -85,6 +84,7 @@ class BOPlayer(object):
 
         return pt, n
 
+    # Intersect ray with brick
     def intersectRayBrick(self, ray, brick):
         # intersecting all edges of rectangle
         top = self.intersectRayInterval(ray, [brick.topleft, brick.topright])
@@ -109,6 +109,7 @@ class BOPlayer(object):
 
         return pt, n
 
+    # Intersect ray with interval
     def intersectRayInterval(self, ray, interval, tmin = 1e0):
         def getLineMlts(r):
             return {'a': r['p'][1] - r['o'][1],\
@@ -125,15 +126,16 @@ class BOPlayer(object):
         v2 = np.array(interval[1]) - np.array(pos)
         if np.dot(v1, v2) > 0: return None # out of interval
 
-        dst = np.array(pos) - np.array(ray['o'])
-        if np.sqrt(dst.dot(dst)) < tmin: return None # it is the same edge!
-
         # Check if point in front of ray
         v = np.array(pos) - np.array(ray['o'])
         if np.dot(np.array(ray['p']) - np.array(ray['o']), v) < 0: return None # behind the ray
 
+        dst = np.array(pos) - np.array(ray['o'])
+        if dst.dot(dst) < tmin * tmin: return None # it is the same edge!
+
         return pos
             
+    # Intersect 2 lines
     def intersectLineLine(self, l1, l2):
         def det(a, b, c, d):
             return a * d - b * c

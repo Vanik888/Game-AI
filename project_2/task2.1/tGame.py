@@ -2,22 +2,22 @@ import numpy as np
 from enum import Enum
 
 class TState(object):
-    """ description of class """
+    """ Game state: stores state-matrix and current player turn """
     
     def __init__(self, m = np.zeros((3,3), dtype=int), cp = 1):
         self.mat = m
-        self.curPlayer = cp
+        self.curPlayer = 1 if np.sum(m) == 0 else -1
         
     def __repr__(self):
         return 'State: %s' % self.mat
 
 class TGame(object):
-    """ description of class """
+    """ Main class of Game, providing storing all necessary information and providing game functionality """
 
     def __init__(self, st = TState(), mc = 0, gs = 2):
         self.state = st
-        self.movesCounter = mc
-        self.gameStatus = gs
+        self.movesCounter = np.sum(np.abs(st.mat))
+        self.gameStatus = self._whoWon()
 
     def __repr__(self):
         return 'State: %s' % self.state.mat
