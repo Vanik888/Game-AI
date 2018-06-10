@@ -10,6 +10,9 @@ logger = logging.getLogger('Logger from Task 2.2')
 
 
 class Node:
+    """
+    Node storing gain value
+    """
     def __init__(self, name, val, child_list=[]):
         self.name = name
         self.val = val
@@ -20,16 +23,30 @@ class Node:
 
 
 class Tree:
+    """
+    Game tree
+    """
     def __init__(self):
         self.root = None
 
     def build_tree_from_dict(self, struct, values):
+        """
+        :param struct: the dict that represents tree
+        :param values: the dict containing utility for leaves
+        :return:
+        """
         sorted_dict = dict(sorted(struct.items(), key=lambda kv: kv[0]))
         root_name = list(sorted_dict.keys())[0]
 
         self._build_tree_from_dict(sorted_dict, values, root_name)
 
     def _build_tree_from_dict(self, struct, values, nodename):
+        """
+        :param struct: the dict that represents tree
+        :param values: the dict containing utility for leaves
+        :param nodename: current node name
+        :return:
+        """
         child_list = struct.get(nodename, [])
         val = values.get(nodename, None)
 
@@ -46,18 +63,39 @@ class Tree:
         return node
 
     def pretraverse(self):
+        """
+        Iterates over the tree in pretraverse manner
+        (node -> all the children)
+        :return:
+        """
         self._pretraverse(self.root)
 
     def _pretraverse(self, node, offset=0):
+        """
+        Recursive function for iterating over the tree
+        :param node: node of the Tree
+        :param offset: specifies the offset to print the node
+        :return:
+        """
         print('%s%s=%s' % (' '*offset, node.name, getattr(node, 'val', '')))
 
         for c in node.child_list:
             self._pretraverse(c, offset+1)
 
     def min_max(self):
+        """
+        Runs min_max algorithm over the tree
+        :return:
+        """
         self.root.val = self.mmax(self.root, player=1)
 
     def mmax(self, node, player):
+        """
+        Maximizes the gain
+        :param node: Current node
+        :param player: Current player
+        :return:
+        """
         if not node.child_list:
             return node.val
         else:
@@ -68,6 +106,12 @@ class Tree:
             return node.val
 
     def mmin(self, node, player):
+        """
+        Minimizes the gain
+        :param node: Current node
+        :param player: Current player
+        :return:
+        """
         if not node.child_list:
             return node.val
         else:
