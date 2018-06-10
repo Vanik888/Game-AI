@@ -182,7 +182,8 @@ class TExplorer:
 
     # Main function, which starts viewer
     def run(self):
-        pygame.init()            
+        pygame.init()        
+        pygame.display.set_caption('TicTacToe Game Tree Explorer - Tree Depth = ' + str(self.tree.maxDepth))
         self.screen = pygame.display.set_mode(self.size)
 
         self.clock = pygame.time.Clock()

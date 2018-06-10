@@ -4,6 +4,7 @@ from tTree import TNode, TTree
 import time, os
 import pickle
 from treeExplorer import TExplorer
+import matplotlib.pyplot as plt
 
 # relate numbers (1, -1, 0) to symbols ('x', 'o', ' ')
 symbols = {1:'X', -1:'O', 0:'--'}
@@ -34,11 +35,29 @@ def getRandomMove(g):
     i = np.random.permutation(np.arange(xs.size))[0]
     return [xs[i], ys[i]]
 
+# Function to show pie charts
+def showHistogram(h, title):
+    labels = np.array(['Draw', 'Cross', 'Not finished', 'Nought'])
+    sizes = np.array(h)
+    colors = np.array(['gold', 'yellowgreen', 'lightcoral', 'lightskyblue'])
+
+    nEmpty = np.where(sizes > 0)
+    sizes = sizes[nEmpty]
+    labels = labels[nEmpty]
+    colors = colors[nEmpty]
+
+    plt.pie(sizes, labels=labels, colors=colors,
+            autopct=lambda(p): '{:.0f} ({:.0f}%)'.format(p * np.sum(sizes) / 100, p), shadow=True, startangle=140)
+    plt.axis('equal')
+    plt.title(title)
+    plt.show()
+
 if __name__ == '__main__':
     
     DEPTH = 9 # Depth of game tree: 9 - max
-    STATISTICS = False # use 'stat=True' to get statistics information during loading (slow)
+    STATISTICS = False # use 'stat=True' to retrieve statistics information during loading from disk (slow)
     
+    wasBuilt = False
     tree = TTree(DEPTH)
     filename = 'tree' + str(DEPTH) + '.ttt'
     if os.path.isfile(filename):
@@ -48,6 +67,7 @@ if __name__ == '__main__':
         tree = TTree.Open(path='tree'+str(tree.maxDepth)+'.ttt', stat=STATISTICS) 
         print('-> ' + str(time.time() - ts))
     else:
+        wasBuilt = True
         # Block for building tree
         g = TGame()
         print('Building tree... (depth = ' + str(tree.maxDepth) + ') This may take a while')
@@ -61,11 +81,14 @@ if __name__ == '__main__':
         tree.save('tree'+str(tree.maxDepth)+'.ttt')
         print('-> ' + str(time.time() - ts))
     
-    if STATISTICS:
+    if wasBuilt or STATISTICS:
         print('Number of nodes: ' + str(tree.uidCnt))
         print('WhoWon histogram: ' + str(tree.whoWonCnt))
-        print('AVG branching factor: ' + str(tree.branchingFactor))
+        print('AVG branching factor (wo\leaves): ' + str(tree.branchingFactor))
 
+        h = tree.whoWonCnt
+        showHistogram([h[0], h[1], h[2], h[-1]], 'All nodes')
+        showHistogram([h[0], h[1], 0, h[-1]], 'Leaves')
     
     # Explore tree in a viewer
     treeViewer = TExplorer(tree)

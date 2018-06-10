@@ -67,6 +67,8 @@ class TTree(object):
         self.whoWonCnt = {-1: 0, 0: 0, 1: 0, 2: 0}
         self.branchingFactor = 0.0
         self.branchingCnt = 0
+        self.branchingFactorLeaves = 0.0
+        self.branchingCntLeaves = 0
     
     # Entry point of recursively building tree
     def buildTree(self, game = None, depth = 0):
@@ -75,11 +77,13 @@ class TTree(object):
         self.branchingFactor = 0.0
         self.branchingCnt = 0
         self.root = self._buildTree(None, game, depth)
+        self.branchingFactorLeaves = self.branchingFactor / self.branchingCntLeaves
         self.branchingFactor /= self.branchingCnt
 
     # Recursive function for building tree
     def _buildTree(self, parent, game, depth):
         game = game or TGame()
+        self.branchingCntLeaves += 1
 
         whoWon = game._whoWon()
         self.whoWonCnt[whoWon] += 1
@@ -127,21 +131,24 @@ class TTree(object):
             for i, c in enumerate(st):
                 mat[i] = int(c) - 1
             return np.reshape(mat, (3, 3)), int(fo.read(1))
-        def getNextNode(tree, fo, parent = None):
-            tree.uidCnt += 1
+        def getNextNode(tree, fo, parent = None, depth = 0):
             m, chN = readBatch(fo)
             node = TNode(tree.uidCnt, TState(m), parent)
+            tree.uidCnt += 1
             children = []
             for i in range(chN):
-                child = getNextNode(tree, fo, node)
-                if stat:
-                    g = TGame(child.state)
-                    tree.whoWonCnt[g.gameStatus] += 1
+                child = getNextNode(tree, fo, node, depth + 1)
                 children = np.append(children, child)
             node.children = children
+            if stat:
+                g = TGame(node.state)
+                tree.whoWonCnt[g.gameStatus] += 1
             if chN > 0:
                 tree.branchingFactor += chN
                 tree.branchingCnt += 1
+            tree.branchingCntLeaves += 1
+            if depth > tree.maxDepth:
+                tree.maxDepth = depth
             return node
 
         fo = open(path, 'r')
@@ -150,7 +157,11 @@ class TTree(object):
         tree.uidCnt = 0
         tree.branchingFactor = 0.0
         tree.branchingCnt = 0
+        tree.branchingCntLeaves = 0
+        tree.maxDepth = -1
+        tree.whoWonCnt = {0: 0, 1: 0, 2: 0, -1: 0}
         tree.root = getNextNode(tree, fo)
+        tree.branchingFactorLeaves = tree.branchingFactor / tree.branchingCntLeaves
         tree.branchingFactor /= tree.branchingCnt
 
 
