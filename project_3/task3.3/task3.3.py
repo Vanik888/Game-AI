@@ -1,11 +1,15 @@
 import csv
-import numpy as np
-import random
 import sys
 import math
+import numpy as np
+import matplotlib.pyplot as plt
+import mpl_toolkits.mplot3d.axes3d as p3
+import matplotlib.animation as animation
 
+# Fixing random state for reproducibility
+np.random.seed(19680801)
 NEUR_NUM = 10
-TMAX = 100
+TMAX = 1000
 
 
 class SOM:
@@ -18,31 +22,61 @@ class SOM:
         self.edges.append([neurons_num - 1, 0])
         self.edges = np.array(self.edges, dtype=np.int)
         dist = self.init_graph()
-        self.dist = self.floydwarshall(dist)
+        self.dist = self.floyd_warshall(dist)
 
-    def run(self):
-        for t in range(TMAX):
+    def debug_run(self):
+        for t in range(1, TMAX):
             point = self.choose_random_point(len(self.all_points))
             winner = self.choose_winner(point)
             self.update_neurons(point, winner, t)
 
+    def run(self):
+        # set up initial 3D visualization
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        y = self.all_points
+        # fit data into the picture
+        ax.set_xlim3d([np.min(y[:, 0]), np.max(y[:, 0])])
+        ax.set_xlabel('X')
+        ax.set_ylim3d([np.min(y[:, 1]), np.max(y[:, 1])])
+        ax.set_ylabel('Y')
+        ax.set_zlim3d([np.min(y[:, 2]), np.max(y[:, 2])])
+        ax.set_zlabel('Z')
+        # draw initial points set
+        ax.scatter(y[:, 0], y[:, 1], y[:, 2], s=20, alpha=0.15)
+        # draw initial neurons positions
+        y = self.neurons
+        neurons_plt = ax.scatter(y[:, 0], y[:, 1], y[:, 2], s=20, c='r', alpha=1.0)
+        anim = animation.FuncAnimation(fig, self.update_graph, frames=TMAX, fargs=(neurons_plt,),
+                                       interval=400)
+        plt.show()
+
+    def update_graph(self, t, neurons_plt):
+        point = self.choose_random_point(len(self.all_points))
+        winner = self.choose_winner(point)
+        self.update_neurons(point, winner, t)
+        print("current frame is " + str(t))
+        y = self.neurons
+        neurons_plt._offsets3d = np.array([y[:, 0], y[:, 1], y[:, 2]])
+        return neurons_plt
+
     def update_neurons(self, x, i, t):
         new_neurons = []
         for j in range(self.neurons_num):
-            new_neuron = self.neurons[j] + \
-                         self.eta(t) * math.exp((-1.0 * self.dist[i][j]) / 2.0 * self.sigma(t)) \
-                         * (x - self.neurons[j])
+            coef = self.eta(t) * math.exp((-1.0 * self.dist[i][j]) / (2.0 * self.sigma(t)))
+            delta = coef * (self.all_points[x] - self.neurons[j])
+            new_neuron = self.neurons[j] + delta
             new_neurons.append(new_neuron)
-        self.neurons = new_neurons
+        self.neurons = np.array(new_neurons)
 
     def sigma(self, t):
-        return math.exp((-1.0 * t)/ self.tmax)
+        return math.exp((-1.0 * t) / self.tmax)
 
     def eta(self, t):
-        return 1 - t*1.0/self.tmax
+        return 1 - t * 1.0 / self.tmax
 
     def choose_init_set(self, num, k):
-        return [self.all_points[self.choose_random_point(num)] for _ in range(k)]
+        return np.array([self.all_points[self.choose_random_point(num)] for _ in range(k)])
 
     def choose_winner(self, point):
         winner = -1
@@ -66,7 +100,7 @@ class SOM:
         dist[num - 1][num - 1] = 0
         return dist
 
-    def floydwarshall(self, dist):
+    def floyd_warshall(self, dist):
         num = self.neurons_num
         for t in range(num):
             for u in range(num):
@@ -82,7 +116,7 @@ class SOM:
 
     @staticmethod
     def choose_random_point(num):
-        return random.randint(0, num)
+        return np.random.randint(0, num)
 
 
 if __name__ == "__main__":
@@ -91,7 +125,7 @@ if __name__ == "__main__":
         next(reader)  # skip header
         data = [r for r in reader]
         x = np.array(data)
-        y = x.astype(np.float)
-        som = SOM(y, NEUR_NUM, TMAX)
+        points = x.astype(np.float)
+        som = SOM(points, NEUR_NUM, TMAX)
         som.run()
 
