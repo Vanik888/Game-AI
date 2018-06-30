@@ -47,17 +47,23 @@ class SOM:
         # draw initial neurons positions
         y = self.neurons
         neurons_plt = ax.scatter(y[:, 0], y[:, 1], y[:, 2], s=20, c='r', alpha=1.0)
-        anim = animation.FuncAnimation(fig, self.update_graph, frames=TMAX, fargs=(neurons_plt,),
-                                       interval=400)
+        y = np.append(y, [y[0]], axis=0)
+        edges_plt = ax.plot(y[:, 0], y[:, 1], y[:, 2], 'C3', zorder=1, lw=1)[0]
+        anim = animation.FuncAnimation(fig, self.update_graph, frames=TMAX, fargs=(neurons_plt, edges_plt),
+                                       interval=50)
         plt.show()
 
-    def update_graph(self, t, neurons_plt):
+    def update_graph(self, t, neurons_plt, edges_plt):
         point = self.choose_random_point(len(self.all_points))
         winner = self.choose_winner(point)
         self.update_neurons(point, winner, t)
         print("current frame is " + str(t))
         y = self.neurons
         neurons_plt._offsets3d = np.array([y[:, 0], y[:, 1], y[:, 2]])
+        y = np.append(y, [y[0]], axis=0)
+        edges_plt.set_xdata(y[:, 0])
+        edges_plt.set_ydata(y[:, 1])
+        edges_plt.set_3d_properties(y[:, 2])
         return neurons_plt
 
     def update_neurons(self, x, i, t):
