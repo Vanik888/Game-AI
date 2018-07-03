@@ -1,5 +1,9 @@
 import csv
 import numpy as np
+from sklearn.cluster import KMeans
+
+N_CLUSTERS = 10
+ITERATIONS = 1000
 
 def get_data():
     with open('q3dm1-path1.csv', 'r') as f:
@@ -17,8 +21,9 @@ def get_activities():
     return activities
 
 
-
 if __name__ == '__main__':
-    get_activities()
-
-
+    activities = get_activities()
+    kmean = KMeans(n_clusters=N_CLUSTERS,
+                   random_state=0,
+                   max_iter=ITERATIONS).fit(activities)
+    print(kmean.cluster_centers_)
