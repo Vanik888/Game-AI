@@ -3,8 +3,9 @@ import sys
 import csv
 import numpy as np
 from sklearn.cluster import KMeans
+from math import sqrt
 
-logging.basicConfig(level=logging.DEBUG, stream=sys.stdout,
+logging.basicConfig(level=logging.INFO, stream=sys.stdout,
                     format='%(levelname)s | %(asctime)s | %(message)s')
 logger = logging.getLogger('Logger from Task 2.2')
 
@@ -44,6 +45,20 @@ def clusterise(data, clusters):
                 mapping_array[i] = j
     return mapping_array
 
+def policy(joint, s):
+    return np.argmax(joint[s, :])
+
+def euclidean(a, b):
+    return sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2 + (a[2] - b[2])**2)
+
+def getCluster(x, neurons):
+    dist = float('inf')
+    ind = -1
+    for i, neuron in enumerate(neurons):
+        if euclidean(x, neuron) < dist:
+            dist = euclidean(x, neuron)
+            ind = i
+    return i
 
 if __name__ == '__main__':
     x = get_data(USER_STATE_FILE)
@@ -58,3 +73,22 @@ if __name__ == '__main__':
     print(clustered_matrix_a)
     clustered_matrix_b = clusterise(x, neurons)
     print(clustered_matrix_b)
+
+
+    joint = np.zeros([len(neurons), N_CLUSTERS], dtype = np.int)
+    for index in range(len(x)):
+        i = clustered_matrix_b[index]
+        j = clustered_matrix_a[index]
+        joint[i, j] += 1
+    joint = np.true_divide(joint, sum(sum(joint)))
+    print (joint.round(2))
+
+    r = x[np.random.randint(len(x))]
+    trajectory = [r]
+    for t in range(100):
+        s = getCluster(r, neurons)
+        a = kmean.cluster_centers_[policy(joint, s)]
+        r = np.add(r, a)
+        trajectory.append(r)
+
+    # print ('tr', trajectory)
