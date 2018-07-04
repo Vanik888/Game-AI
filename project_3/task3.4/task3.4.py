@@ -6,6 +6,8 @@ from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import cm
 from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.patheffects as path_effects
+
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout,
                     format='%(asctime)s | %(message)s')
@@ -49,28 +51,31 @@ def clusterise(data, clusters):
 
 def plot_clusters(data, clusters_map, centers, plot_name='3dplot.png'):
     fig = plt.figure()
+    fig.set_size_inches(5.5, 4.5)
     ax = fig.add_subplot(111, projection='3d')
     join_data_cluster = np.append(data, clusters_map, axis=1)
 
     colors = cm.rainbow(np.linspace(0, 1, len(centers)))
     for i, c in zip(xrange(len(centers)), colors):
         d = join_data_cluster[join_data_cluster[:, -1] == i]
-        print(d)
         if d.size > 0:
-            ax.text(centers[i][0], centers[i][1], centers[i][2], i, color=c)
+            t = ax.text(centers[i][0], centers[i][1], centers[i][2], i, color=c)
+            t.set_path_effects(
+                [path_effects.Stroke(linewidth=3, foreground='black'),
+                 path_effects.Normal()])
             ax.scatter(d[:, 0], d[:, 1], d[:, 2],  c=c)
 
     ax.set_xlim(left=np.min(data[:, 0]), right=np.max(data[:, 0]))
     ax.set_ylim(bottom=np.min(data[:, 1]), top=np.max(data[:, 1]))
     ax.set_zlim(bottom=np.min(data[:, 2]), top=np.max(data[:, 2]))
 
-    ax.set_xlabel('X Label')
-    ax.set_ylabel('Y Label')
-    ax.set_zlabel('Z Label')
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
     file_path = 'plots/{}'.format(plot_name)
     plt.savefig(file_path, facecolor='w', edgecolor='w',
                 papertype=None, format='png', transparent=False,
-                bbox_inches='tight', pad_inches=0.1)
+                pad_inches=0.1, dpi=100)
     # plt.show()
 
 
