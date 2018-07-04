@@ -10,7 +10,7 @@ import matplotlib.animation as animation
 np.random.seed(19680801)
 NEUR_NUM = 10
 TMAX = 1000
-
+NEURONS_FILE = 'neurons.csv'
 
 class SOM:
     def __init__(self, all_points, neurons_num, tmax):
@@ -29,6 +29,19 @@ class SOM:
             point = self.choose_random_point(len(self.all_points))
             winner = self.choose_winner(point)
             self.update_neurons(point, winner, t)
+
+    def train(self, tmax=TMAX, neurons_output_file=None):
+        for t in range(1, tmax):
+            point = self.choose_random_point(len(self.all_points))
+            winner = self.choose_winner(point)
+            self.update_neurons(point, winner, t)
+
+        if neurons_output_file:
+            with open(neurons_output_file, 'w') as f:
+                writer = csv.writer(f, delimiter=',',
+                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                for n in self.neurons:
+                    writer.writerow(n)
 
     def run(self):
         # set up initial 3D visualization
@@ -52,6 +65,7 @@ class SOM:
         anim = animation.FuncAnimation(fig, self.update_graph, frames=TMAX, fargs=(neurons_plt, edges_plt),
                                        interval=50)
         plt.show()
+
 
     def update_graph(self, t, neurons_plt, edges_plt):
         point = self.choose_random_point(len(self.all_points))
@@ -133,5 +147,6 @@ if __name__ == "__main__":
         x = np.array(data)
         points = x.astype(np.float)
         som = SOM(points, NEUR_NUM, TMAX)
+        som.train(neurons_output_file=NEURONS_FILE)
         som.run()
 
