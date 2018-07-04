@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.cluster import KMeans
 
 logging.basicConfig(level=logging.DEBUG, stream=sys.stdout,
-                    format='%(levelname)s | %(asctime)s | %(message)s')
+                    format='%(asctime)s | %(message)s')
 logger = logging.getLogger('Logger from Task 2.2')
 
 
@@ -44,6 +44,8 @@ def clusterise(data, clusters):
                 mapping_array[i] = j
     return mapping_array
 
+# def plot_clusters(data, clusters_map, n_centers):
+
 
 if __name__ == '__main__':
     x = get_data(USER_STATE_FILE)
@@ -56,5 +58,5 @@ if __name__ == '__main__':
     print(neurons)
     clustered_matrix_a = clusterise(activities, kmean.cluster_centers_)
     print(clustered_matrix_a)
-    clustered_matrix_b = clusterise(x, neurons)
-    print(clustered_matrix_b)
+    clustered_matrix_x = clusterise(x, neurons)
+    print(clustered_matrix_x)
