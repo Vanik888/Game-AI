@@ -3,8 +3,11 @@ import sys
 import csv
 import numpy as np
 from sklearn.cluster import KMeans
+import matplotlib.pyplot as plt
+from matplotlib.pyplot import cm
+from mpl_toolkits.mplot3d import Axes3D
 
-logging.basicConfig(level=logging.DEBUG, stream=sys.stdout,
+logging.basicConfig(level=logging.INFO, stream=sys.stdout,
                     format='%(asctime)s | %(message)s')
 logger = logging.getLogger('Logger from Task 2.2')
 
@@ -44,7 +47,31 @@ def clusterise(data, clusters):
                 mapping_array[i] = j
     return mapping_array
 
-# def plot_clusters(data, clusters_map, n_centers):
+def plot_clusters(data, clusters_map, centers, plot_name='3dplot.png'):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    join_data_cluster = np.append(data, clusters_map, axis=1)
+
+    colors = cm.rainbow(np.linspace(0, 1, len(centers)))
+    for i, c in zip(xrange(len(centers)), colors):
+        d = join_data_cluster[join_data_cluster[:, -1] == i]
+        print(d)
+        if d.size > 0:
+            ax.text(centers[i][0], centers[i][1], centers[i][2], i, color=c)
+            ax.scatter(d[:, 0], d[:, 1], d[:, 2],  c=c)
+
+    ax.set_xlim(left=np.min(data[:, 0]), right=np.max(data[:, 0]))
+    ax.set_ylim(bottom=np.min(data[:, 1]), top=np.max(data[:, 1]))
+    ax.set_zlim(bottom=np.min(data[:, 2]), top=np.max(data[:, 2]))
+
+    ax.set_xlabel('X Label')
+    ax.set_ylabel('Y Label')
+    ax.set_zlabel('Z Label')
+    file_path = 'plots/{}'.format(plot_name)
+    plt.savefig(file_path, facecolor='w', edgecolor='w',
+                papertype=None, format='png', transparent=False,
+                bbox_inches='tight', pad_inches=0.1)
+    # plt.show()
 
 
 if __name__ == '__main__':
@@ -60,3 +87,5 @@ if __name__ == '__main__':
     print(clustered_matrix_a)
     clustered_matrix_x = clusterise(x, neurons)
     print(clustered_matrix_x)
+    plot_clusters(x, clustered_matrix_a, kmean.cluster_centers_, '3d_a_kmean.png')
+    plot_clusters(x, clustered_matrix_x, neurons, '3d_x_som.png')
