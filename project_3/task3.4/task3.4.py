@@ -71,22 +71,34 @@ def jointProbabilities(neurons, clustered_matrix_x, clustered_matrix_a):
         i = clustered_matrix_x[index]
         j = clustered_matrix_a[index]
         joint[i, j] += 1
-    joint = np.true_divide(joint, sum(sum(joint)))
-    # print (joint.round(2))
-    return joint
+    # print joint
+    
+    jointNorm = np.zeros([len(neurons), N_CLUSTERS], dtype = np.float)
+    for i, line in enumerate(joint):
+        s = sum(line)
+        if s != 0:
+            for j, element in enumerate(line):
+                jointNorm[i, j] = float(element)/float(s)
+    # print (jointNorm.round(2))
+    return jointNorm
 
 def computeTrajectory(iterations, x, neurons, kmean):
     starting_index = np.random.randint(len(x))
     r = x[starting_index]
+    # print r
     trajectory = [r]
     for t in range(iterations):
         s = getCluster(r, neurons)
+        # print s
+        # print policy(joint, s)
         a = kmean.cluster_centers_[policy(joint, s)]
+        # print a
         r = np.add(r, a)
+        # print r
         trajectory.append(r)
 
     trajectory = np.matrix(trajectory)
-    print (starting_index)
+    # print (starting_index)
     return trajectory
 
 def plot_clusters(data, clusters_map, centers, plot_name='3dplot.png'):
@@ -141,9 +153,9 @@ if __name__ == '__main__':
     # print(kmean.cluster_centers_)
     # print(neurons)
     clustered_matrix_a = clusterise(activities, kmean.cluster_centers_)
-    # print(clustered_matrix_a)
+    print(clustered_matrix_a)
     clustered_matrix_x = clusterise(x, neurons)
-    # print(clustered_matrix_x)
+    print(clustered_matrix_x)
     # plot_clusters(x, clustered_matrix_a, kmean.cluster_centers_, '3d_a_kmean.png')
     # plot_clusters(x, clustered_matrix_x, neurons, '3d_x_som.png')
 
