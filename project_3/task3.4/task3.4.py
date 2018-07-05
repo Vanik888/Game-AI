@@ -63,7 +63,31 @@ def getCluster(x, neurons):
         if euclidean(x, neuron) < dist:
             dist = euclidean(x, neuron)
             ind = i
-    return i
+    return ind
+
+def jointProbabilities(neurons, clustered_matrix_x, clustered_matrix_a):
+    joint = np.zeros([len(neurons), N_CLUSTERS], dtype = np.int)
+    for index in range(len(x)):
+        i = clustered_matrix_x[index]
+        j = clustered_matrix_a[index]
+        joint[i, j] += 1
+    joint = np.true_divide(joint, sum(sum(joint)))
+    # print (joint.round(2))
+    return joint
+
+def computeTrajectory(iterations, x, neurons, kmean):
+    starting_index = np.random.randint(len(x))
+    r = x[starting_index]
+    trajectory = [r]
+    for t in range(iterations):
+        s = getCluster(r, neurons)
+        a = kmean.cluster_centers_[policy(joint, s)]
+        r = np.add(r, a)
+        trajectory.append(r)
+
+    trajectory = np.matrix(trajectory)
+    print (starting_index)
+    return trajectory
 
 def plot_clusters(data, clusters_map, centers, plot_name='3dplot.png'):
     fig = plt.figure()
@@ -94,6 +118,19 @@ def plot_clusters(data, clusters_map, centers, plot_name='3dplot.png'):
                 pad_inches=0.1, dpi=100)
     plt.show()
 
+def plot_trajectory(trajectory, plot_name):
+    x = np.append([], trajectory[:, 0])
+    y = np.append([], trajectory[:, 1])
+    z = np.append([], trajectory[:, 2])
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    ax.plot(x, y, z, label='trajectory')
+    file_path = 'plots/{}'.format(plot_name)
+    plt.savefig(file_path, facecolor='w', edgecolor='w',
+                papertype=None, format='png', transparent=False,
+                pad_inches=0.1, dpi=100)
+    plt.show()
+
 if __name__ == '__main__':
     x = get_data(USER_STATE_FILE)
     neurons = get_data(NEURONS_STATE_FILE)
@@ -101,30 +138,16 @@ if __name__ == '__main__':
     kmean = KMeans(n_clusters=N_CLUSTERS,
                    random_state=0,
                    max_iter=ITERATIONS).fit(activities)
-    print(kmean.cluster_centers_)
-    print(neurons)
+    # print(kmean.cluster_centers_)
+    # print(neurons)
     clustered_matrix_a = clusterise(activities, kmean.cluster_centers_)
-    print(clustered_matrix_a)
+    # print(clustered_matrix_a)
     clustered_matrix_x = clusterise(x, neurons)
-    print(clustered_matrix_x)
-    plot_clusters(x, clustered_matrix_a, kmean.cluster_centers_, '3d_a_kmean.png')
-    plot_clusters(x, clustered_matrix_x, neurons, '3d_x_som.png')
+    # print(clustered_matrix_x)
+    # plot_clusters(x, clustered_matrix_a, kmean.cluster_centers_, '3d_a_kmean.png')
+    # plot_clusters(x, clustered_matrix_x, neurons, '3d_x_som.png')
 
 
-    joint = np.zeros([len(neurons), N_CLUSTERS], dtype = np.int)
-    for index in range(len(x)):
-        i = clustered_matrix_x[index]
-        j = clustered_matrix_a[index]
-        joint[i, j] += 1
-    joint = np.true_divide(joint, sum(sum(joint)))
-    print (joint.round(2))
-
-    r = x[np.random.randint(len(x))]
-    trajectory = [r]
-    for t in range(100):
-        s = getCluster(r, neurons)
-        a = kmean.cluster_centers_[policy(joint, s)]
-        r = np.add(r, a)
-        trajectory.append(r)
-
-    # print ('tr', trajectory)
+    joint = jointProbabilities(neurons, clustered_matrix_x, clustered_matrix_a)
+    trajectory = computeTrajectory(300, x, neurons, kmean)
+    plot_trajectory(trajectory, '3d_trajectory.png')
