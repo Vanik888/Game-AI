@@ -150,16 +150,16 @@ if __name__ == '__main__':
     kmean = KMeans(n_clusters=N_CLUSTERS,
                    random_state=0,
                    max_iter=ITERATIONS).fit(activities)
-    # print(kmean.cluster_centers_)
+    print(kmean.cluster_centers_)
     # print(neurons)
     clustered_matrix_a = clusterise(activities, kmean.cluster_centers_)
-    print(clustered_matrix_a)
+    # print(clustered_matrix_a)
     clustered_matrix_x = clusterise(x, neurons)
-    print(clustered_matrix_x)
-    # plot_clusters(x, clustered_matrix_a, kmean.cluster_centers_, '3d_a_kmean.png')
-    # plot_clusters(x, clustered_matrix_x, neurons, '3d_x_som.png')
+    # print(clustered_matrix_x)
+    plot_clusters(activities, clustered_matrix_a, kmean.cluster_centers_, '3d_a_kmean.png')
+    plot_clusters(x, clustered_matrix_x, neurons, '3d_x_som.png')
 
 
-    joint = jointProbabilities(neurons, clustered_matrix_x, clustered_matrix_a)
-    trajectory = computeTrajectory(300, x, neurons, kmean)
-    plot_trajectory(trajectory, '3d_trajectory.png')
+    # joint = jointProbabilities(neurons, clustered_matrix_x, clustered_matrix_a)
+    # trajectory = computeTrajectory(300, x, neurons, kmean)
+    # plot_trajectory(trajectory, '3d_trajectory.png')
