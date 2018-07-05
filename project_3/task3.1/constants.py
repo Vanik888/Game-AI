@@ -1,0 +1,12 @@
+# relate numbers (1, -1, 0) to symbols ('x', 'o', ' ')
+symbols = {1: 'x', -1: 'o', 0: ' '}
+
+# number of rows of game matrix
+n_rows = 18
+# number of columns of game matrix
+n_columns = 18
+# sum, which is enough for winning the game
+winning_sum = 4
+
+diagonal_shifts = xrange(-15, 15, 1)
+
