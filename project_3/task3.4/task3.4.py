@@ -4,9 +4,14 @@ import csv
 import numpy as np
 from sklearn.cluster import KMeans
 from math import sqrt
+import matplotlib.pyplot as plt
+from matplotlib.pyplot import cm
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.patheffects as path_effects
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout,
-                    format='%(levelname)s | %(asctime)s | %(message)s')
+                    format='%(asctime)s | %(message)s')
+
 logger = logging.getLogger('Logger from Task 2.2')
 
 
@@ -60,6 +65,35 @@ def getCluster(x, neurons):
             ind = i
     return i
 
+def plot_clusters(data, clusters_map, centers, plot_name='3dplot.png'):
+    fig = plt.figure()
+    fig.set_size_inches(5.5, 4.5)
+    ax = fig.add_subplot(111, projection='3d')
+    join_data_cluster = np.append(data, clusters_map, axis=1)
+
+    colors = cm.rainbow(np.linspace(0, 1, len(centers)))
+    for i, c in zip(xrange(len(centers)), colors):
+        d = join_data_cluster[join_data_cluster[:, -1] == i]
+        if d.size > 0:
+            t = ax.text(centers[i][0], centers[i][1], centers[i][2], i, color=c)
+            t.set_path_effects(
+                [path_effects.Stroke(linewidth=3, foreground='black'),
+                 path_effects.Normal()])
+            ax.scatter(d[:, 0], d[:, 1], d[:, 2],  c=c)
+
+    ax.set_xlim(left=np.min(data[:, 0]), right=np.max(data[:, 0]))
+    ax.set_ylim(bottom=np.min(data[:, 1]), top=np.max(data[:, 1]))
+    ax.set_zlim(bottom=np.min(data[:, 2]), top=np.max(data[:, 2]))
+
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    file_path = 'plots/{}'.format(plot_name)
+    plt.savefig(file_path, facecolor='w', edgecolor='w',
+                papertype=None, format='png', transparent=False,
+                pad_inches=0.1, dpi=100)
+    plt.show()
+
 if __name__ == '__main__':
     x = get_data(USER_STATE_FILE)
     neurons = get_data(NEURONS_STATE_FILE)
@@ -71,13 +105,15 @@ if __name__ == '__main__':
     print(neurons)
     clustered_matrix_a = clusterise(activities, kmean.cluster_centers_)
     print(clustered_matrix_a)
-    clustered_matrix_b = clusterise(x, neurons)
-    print(clustered_matrix_b)
+    clustered_matrix_x = clusterise(x, neurons)
+    print(clustered_matrix_x)
+    plot_clusters(x, clustered_matrix_a, kmean.cluster_centers_, '3d_a_kmean.png')
+    plot_clusters(x, clustered_matrix_x, neurons, '3d_x_som.png')
 
 
     joint = np.zeros([len(neurons), N_CLUSTERS], dtype = np.int)
     for index in range(len(x)):
-        i = clustered_matrix_b[index]
+        i = clustered_matrix_x[index]
         j = clustered_matrix_a[index]
         joint[i, j] += 1
     joint = np.true_divide(joint, sum(sum(joint)))
