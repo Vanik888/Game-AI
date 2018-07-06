@@ -23,7 +23,7 @@ NEURONS_STATE_FILE = 'neurons.csv'
 def get_data(filename):
     with open(filename, 'r') as f:
         reader = csv.reader(f)
-        next(reader)
+        # next(reader)
         data = [i for i in reader]
         return np.array(data, dtype=np.float)
 
@@ -65,11 +65,13 @@ def getCluster(x, neurons):
             ind = i
     return ind
 
-def jointProbabilities(neurons, clustered_matrix_x, clustered_matrix_a):
+def jointProbabilities(x, activities, neurons, kmean):#, clustered_matrix_x, clustered_matrix_a):
     joint = np.zeros([len(neurons), N_CLUSTERS], dtype = np.int)
     for index in range(len(x)):
-        i = clustered_matrix_x[index]
-        j = clustered_matrix_a[index]
+        i = getCluster(x[index], neurons)
+        j = getCluster(activities[index], kmean.cluster_centers_)
+        # i = clustered_matrix_x[index]
+        # j = clustered_matrix_a[index]
         joint[i, j] += 1
     # print joint
     
@@ -150,16 +152,17 @@ if __name__ == '__main__':
     kmean = KMeans(n_clusters=N_CLUSTERS,
                    random_state=0,
                    max_iter=ITERATIONS).fit(activities)
-    print(kmean.cluster_centers_)
-    # print(neurons)
-    clustered_matrix_a = clusterise(activities, kmean.cluster_centers_)
-    # print(clustered_matrix_a)
-    clustered_matrix_x = clusterise(x, neurons)
-    # print(clustered_matrix_x)
-    plot_clusters(activities, clustered_matrix_a, kmean.cluster_centers_, '3d_a_kmean.png')
-    plot_clusters(x, clustered_matrix_x, neurons, '3d_x_som.png')
+    print 'kmeans\n', (kmean.cluster_centers_)
+    print 'neurons\n', (neurons)
+    # clustered_matrix_a = clusterise(activities, kmean.cluster_centers_)
+    # print 'clustered a\n', (clustered_matrix_a)
+    # clustered_matrix_x = clusterise(x, neurons)
+    # print 'clustered x\n', (clustered_matrix_x)
+    # plot_clusters(activities, clustered_matrix_a, kmean.cluster_centers_, '3d_a_kmean.png')
+    # plot_clusters(x, clustered_matrix_x, neurons, '3d_x_som.png')
 
 
-    # joint = jointProbabilities(neurons, clustered_matrix_x, clustered_matrix_a)
-    # trajectory = computeTrajectory(300, x, neurons, kmean)
-    # plot_trajectory(trajectory, '3d_trajectory.png')
+    joint = jointProbabilities(x, activities, neurons, kmean)#, clustered_matrix_x, clustered_matrix_a)
+    print joint.round(2)
+    trajectory = computeTrajectory(400, x, neurons, kmean)
+    plot_trajectory(trajectory, '3d_trajectory.png')
