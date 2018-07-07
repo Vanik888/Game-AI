@@ -20,6 +20,7 @@ ITERATIONS = 1000
 USER_STATE_FILE = 'q3dm1-path1.csv'
 NEURONS_STATE_FILE = 'neurons.csv'
 
+
 def get_data(filename):
     with open(filename, 'r') as f:
         reader = csv.reader(f)
@@ -44,17 +45,20 @@ def clusterise(data, clusters):
     for i, d in enumerate(data):
         for j, c in enumerate(clusters):
             dist = np.linalg.norm(d-c)
-            if dist < np.linalg.norm(d-clusters[mapping_array[0]]):
+            if dist < np.linalg.norm(d-clusters[mapping_array[i]]):
                 logger.debug('point %s (%s) = cluster %s (%s)'
                              % (d, i, c, j))
                 mapping_array[i] = j
     return mapping_array
 
+
 def policy(joint, s):
     return np.argmax(joint[s, :])
 
+
 def euclidean(a, b):
     return sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2 + (a[2] - b[2])**2)
+
 
 def getCluster(x, neurons):
     dist = float('inf')
@@ -65,15 +69,17 @@ def getCluster(x, neurons):
             ind = i
     return ind
 
+
 def jointProbabilities(neurons, clustered_matrix_x, clustered_matrix_a):
-    joint = np.zeros([len(neurons), N_CLUSTERS], dtype = np.int)
+    joint = np.zeros([len(neurons), N_CLUSTERS], dtype=np.int)
     for index in range(len(x)):
         i = clustered_matrix_x[index]
         j = clustered_matrix_a[index]
         joint[i, j] += 1
-    joint = np.true_divide(joint, sum(sum(joint)))
+    joint = np.true_divide(joint, np.sum(joint))
     # print (joint.round(2))
     return joint
+
 
 def computeTrajectory(iterations, x, neurons, kmean):
     starting_index = np.random.randint(len(x))
@@ -88,6 +94,7 @@ def computeTrajectory(iterations, x, neurons, kmean):
     trajectory = np.matrix(trajectory)
     print (starting_index)
     return trajectory
+
 
 def plot_clusters(data, clusters_map, centers, plot_name='3dplot.png'):
     fig = plt.figure()
@@ -118,6 +125,7 @@ def plot_clusters(data, clusters_map, centers, plot_name='3dplot.png'):
                 pad_inches=0.1, dpi=100)
     plt.show()
 
+
 def plot_trajectory(trajectory, plot_name):
     x = np.append([], trajectory[:, 0])
     y = np.append([], trajectory[:, 1])
@@ -139,12 +147,15 @@ if __name__ == '__main__':
                    random_state=0,
                    max_iter=ITERATIONS).fit(activities)
     print(kmean.cluster_centers_)
+
+
+
     # print(neurons)
-    clustered_matrix_a = clusterise(activities, kmean.cluster_centers_)
+    # clustered_matrix_a = clusterise(activities, kmean.cluster_centers_)
     # print(clustered_matrix_a)
-    clustered_matrix_x = clusterise(x, neurons)
+    # clustered_matrix_x = clusterise(x, neurons)
     # print(clustered_matrix_x)
-    plot_clusters(activities, clustered_matrix_a, kmean.cluster_centers_, '3d_a_kmean.png')
+    # plot_clusters(activities, clustered_matrix_a, kmean.cluster_centers_, '3d_a_kmean.png')
     # plot_clusters(x, clustered_matrix_x, neurons, '3d_x_som.png')
 
 
