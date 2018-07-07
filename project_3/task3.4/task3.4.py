@@ -16,13 +16,35 @@ logging.basicConfig(level=logging.INFO, stream=sys.stdout,
 logger = logging.getLogger('Logger from Task 2.2')
 
 
-N_CLUSTERS = 10
-ITERATIONS = 1000
-USER_STATE_FILE = 'q3dm1-path1.csv'
-NEURONS_STATE_FILE = 'neurons.csv'
-TRAJECTORY_PLOT_FILE = 'plots/3d_trajectory.png'
-KMEAN_PLOT_FILE = 'plots/3d_a_kmean.png'
-SOM_PLOT_FILE = 'plots/3d_x_som.png'
+
+SHOW_PLOTS = False
+N_CLUSTERS = [10, 60]
+
+
+class PATHS:
+    path1 = 'path1'
+    path2 = 'path2'
+
+
+class N_CLUSTERS:
+    n60 = 60
+    n10 = 10
+
+
+class NEURONS_FILE:
+    n10 = 'neurons_10.csv'
+    n60 = 'neurons_60.csv'
+
+
+class ITERATIONS:
+    n1000 = 1000
+    n10000 = 10000
+
+
+USER_STATE_FILE = 'q3dm1.csv'
+TRAJECTORY_PLOT_FILE = 'trajectory.png'
+KMEAN_PLOT_FILE = 'a_kmean.png'
+SOM_PLOT_FILE = 'x_som.png'
 
 
 def get_data(filename):
@@ -74,7 +96,7 @@ def getCluster(x, neurons):
 
 
 def jointProbabilities(x, activities, neurons, kmean):
-    joint = np.zeros([len(neurons), N_CLUSTERS], dtype=np.int)
+    joint = np.zeros([len(neurons), len(kmean.cluster_centers_)], dtype=np.int)
     for index in range(len(x)):
         i = getCluster(x[index], neurons)
         j = getCluster(activities[index], kmean.cluster_centers_)
@@ -114,6 +136,7 @@ def computeTrajectory(iterations, x, neurons, kmean, joint):
 
 
 def plot_clusters(data, clusters_map, centers, plot_name='3dplot.png'):
+    global SHOW_PLOTS
     fig = plt.figure()
     fig.set_size_inches(5.5, 4.5)
     ax = fig.add_subplot(111, projection='3d')
@@ -140,10 +163,12 @@ def plot_clusters(data, clusters_map, centers, plot_name='3dplot.png'):
     plt.savefig(file_path, facecolor='w', edgecolor='w',
                 papertype=None, format='png', transparent=False,
                 pad_inches=0.1, dpi=100)
-    plt.show()
+    if SHOW_PLOTS:
+        plt.show()
 
 
 def plot_trajectory(trajectory, plot_name):
+    global SHOW_PLOTS
     x = np.append([], trajectory[:, 0])
     y = np.append([], trajectory[:, 1])
     z = np.append([], trajectory[:, 2])
@@ -154,18 +179,23 @@ def plot_trajectory(trajectory, plot_name):
     plt.savefig(file_path, facecolor='w', edgecolor='w',
                 papertype=None, format='png', transparent=False,
                 pad_inches=0.1, dpi=100)
-    plt.show()
+    if SHOW_PLOTS:
+        plt.show()
 
 
-def analyze(path, n_clusters, iterations):
+def analyze(path, user_state_file, neurons_state_file, n_clusters, iterations):
+    logger.info('\nPATH=%s\nStart analysis with:'
+                '\nn_clusters=%s'
+                '\niterations=%s'
+                '\nneurons_file=%s\n' % (path, n_clusters, iterations,
+                                         neurons_state_file))
+
     def _get_file_name(filename, prefix=path):
         return '%s/%s' % (prefix, filename)
 
-    user_state_file = _get_file_name(USER_STATE_FILE)
-    neurons_state_file = _get_file_name(NEURONS_STATE_FILE)
-    kmean_plot_file = _get_file_name(KMEAN_PLOT_FILE)
-    som_plot_file = _get_file_name(SOM_PLOT_FILE)
-    trajectory_plot_file = _get_file_name(TRAJECTORY_PLOT_FILE)
+    user_state_file = _get_file_name(user_state_file)
+    neurons_state_file = _get_file_name(neurons_state_file)
+    plots_dir = _get_file_name('plots')
 
 
     x = get_data(user_state_file)
@@ -182,15 +212,57 @@ def analyze(path, n_clusters, iterations):
     logger.debug('clustered a\n %s' % clustered_matrix_a)
     logger.debug('clustered x\n %s' % clustered_matrix_x)
 
+    def _get_plots_name(filename, plots_dir=plots_dir, n_neurons=len(neurons),
+                        n_clusters=len(kmean.cluster_centers_), prefix=path):
+        return '%s/%scl_%sn_%siter_%s' % (plots_dir, n_clusters, n_neurons,
+                                          iterations, filename)
+
+    som_plot_file = _get_plots_name(SOM_PLOT_FILE)
+    kmean_plot_file = _get_plots_name(KMEAN_PLOT_FILE)
+    trajectory_plot_file = _get_plots_name(TRAJECTORY_PLOT_FILE)
+
     plot_clusters(activities, clustered_matrix_a, kmean.cluster_centers_, kmean_plot_file)
     plot_clusters(x, clustered_matrix_x, neurons, som_plot_file)
-
 
     joint = jointProbabilities(x, activities, neurons, kmean)#, clustered_matrix_x, clustered_matrix_a)
     print joint.round(2)
     trajectory = computeTrajectory(400, x, neurons, kmean, joint)
     plot_trajectory(trajectory, trajectory_plot_file)
+    logger.info('Analysis is done!')
 
 
 if __name__ == '__main__':
-    analyze('path1', N_CLUSTERS, ITERATIONS)
+    # # ANALYSIS FOR PATH 1
+    # analyze(PATHS.path1, USER_STATE_FILE,
+    #         NEURONS_FILE.n10,
+    #         N_CLUSTERS.n10,
+    #         ITERATIONS.n10000)
+    #
+    # analyze(PATHS.path1, USER_STATE_FILE,
+    #         NEURONS_FILE.n10,
+    #         N_CLUSTERS.n60,
+    #         ITERATIONS.n10000)
+    #
+    # analyze(PATHS.path1, USER_STATE_FILE,
+    #         NEURONS_FILE.n60,
+    #         N_CLUSTERS.n60,
+    #         ITERATIONS.n10000)
+
+    # ANALYSIS FOR PATH 2
+
+    analyze(PATHS.path2, USER_STATE_FILE,
+            NEURONS_FILE.n10,
+            N_CLUSTERS.n10,
+            ITERATIONS.n10000)
+
+    analyze(PATHS.path2, USER_STATE_FILE,
+            NEURONS_FILE.n10,
+            N_CLUSTERS.n60,
+            ITERATIONS.n10000)
+
+    analyze(PATHS.path2, USER_STATE_FILE,
+            NEURONS_FILE.n60,
+            N_CLUSTERS.n60,
+            ITERATIONS.n10000)
+
+
