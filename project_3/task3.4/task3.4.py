@@ -175,7 +175,8 @@ def plot_trajectory(trajectory, plot_name):
     fig = plt.figure()
     ax = fig.gca(projection='3d')
     ax.plot(x, y, z, label='trajectory')
-    ax.plot([trajectory[0, 0]], [trajectory[0, 1]], [trajectory[0, 2]], marker='o', color='red')
+    ax.plot([x[0]], y[0], z[0], marker='o', color='red')
+    ax.plot([x[-1]], y[-1], z[-1], marker='o', color='green')
     file_path = plot_name
     plt.savefig(file_path, facecolor='w', edgecolor='w',
                 papertype=None, format='png', transparent=False,
