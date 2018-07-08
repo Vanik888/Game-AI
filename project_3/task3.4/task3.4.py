@@ -115,8 +115,11 @@ def jointProbabilities(x, activities, neurons, kmean):
     return jointNorm
 
 
-def computeTrajectory(iterations, x, neurons, kmean, joint):
-    starting_index = np.random.randint(len(x))#1058
+def computeTrajectory(iterations, x, neurons, kmean, joint, start_index=None):
+    starting_index = start_index if start_index is not None else np.random.randint(len(x))
+    # if start_index is not None:
+    #     starting_index = np.random.randint(len(x))#1058
+
     r = x[starting_index]
     logger.debug('Trajectory start point=%s' % r)
     trajectory = [r]
@@ -168,6 +171,15 @@ def plot_clusters(data, clusters_map, centers, plot_name='3dplot.png'):
         plt.show()
 
 
+def _plot_points(ax, x, y, z, color, text=None):
+    ax.plot([x], y, z, marker='o', color=color)
+    if text:
+        t = ax.text(x, y, z, text, color=color, alpha=0.7)
+        t.set_path_effects(
+            [path_effects.Stroke(linewidth=1, foreground='black'),
+             path_effects.Normal()])
+
+
 def plot_trajectory(trajectory, origin, plot_name, plot_origin=False):
     global SHOW_PLOTS
     x = np.append([], trajectory[:, 0])
@@ -177,13 +189,17 @@ def plot_trajectory(trajectory, origin, plot_name, plot_origin=False):
 
     ax = fig.gca(projection='3d')
     ax.plot(x, y, z, label='trajectory')
-    ax.plot([x[0]], y[0], z[0], marker='o', color='red')
-    ax.plot([x[-1]], y[-1], z[-1], marker='o', color='green')
+
+    _plot_points(ax, x[0], y[0], z[0], color='red', text='start')
+    _plot_points(ax, x[-1], y[-1], z[-1], color='green', text='end')
+
     if plot_origin:
         ax.plot(origin[:, 0], origin[:, 1], origin[:, 2],
             label='original trajectory', color='orange', alpha=0.6)
-        ax.plot([origin[0, 0]], origin[0, 1], origin[0, 2], marker='o', color='darkviolet')
-        ax.plot([origin[-1, 0]], origin[-1, 1], origin[-1, 2], marker='o', color='black')
+        _plot_points(ax, origin[0, 0], origin[0, 1], origin[0, 2],
+                     color='darkviolet')
+        _plot_points(ax, origin[-1, 0], origin[-1, 1], origin[-1, 2],
+                     color='black')
 
     plt.tight_layout()
     file_path = plot_name
@@ -195,7 +211,7 @@ def plot_trajectory(trajectory, origin, plot_name, plot_origin=False):
 
 
 def analyze(path, user_state_file, neurons_state_file, n_clusters, iterations,
-            plot_origin=False):
+            plot_origin=False, start_index=None):
     logger.info('\nPATH=%s\nStart analysis with:'
                 '\nn_clusters=%s'
                 '\niterations=%s'
@@ -208,7 +224,6 @@ def analyze(path, user_state_file, neurons_state_file, n_clusters, iterations,
     user_state_file = _get_file_name(user_state_file)
     neurons_state_file = _get_file_name(neurons_state_file)
     plots_dir = _get_file_name('plots')
-
 
     x = get_data(user_state_file)
     neurons = get_data(neurons_state_file)
@@ -238,7 +253,7 @@ def analyze(path, user_state_file, neurons_state_file, n_clusters, iterations,
 
     joint = jointProbabilities(x, activities, neurons, kmean)#, clustered_matrix_x, clustered_matrix_a)
     print joint.round(2)
-    trajectory = computeTrajectory(200, x, neurons, kmean, joint)
+    trajectory = computeTrajectory(200, x, neurons, kmean, joint, start_index=start_index)
     plot_trajectory(trajectory, x, trajectory_plot_file, plot_origin)
     logger.info('Analysis is done!')
 
@@ -250,34 +265,38 @@ if __name__ == '__main__':
             N_CLUSTERS.n10,
             ITERATIONS.n10000,
             plot_origin=False)
-    
+
     analyze(PATHS.path1, USER_STATE_FILE,
             NEURONS_FILE.n10,
             N_CLUSTERS.n60,
-            ITERATIONS.n10000)
-    
+            ITERATIONS.n10000,
+            plot_origin=False)
+
     analyze(PATHS.path1, USER_STATE_FILE,
             NEURONS_FILE.n60,
             N_CLUSTERS.n60,
             ITERATIONS.n10000,
             plot_origin=True)
-
     # ANALYSIS FOR PATH 2
 
     analyze(PATHS.path2, USER_STATE_FILE,
             NEURONS_FILE.n10,
             N_CLUSTERS.n10,
-            ITERATIONS.n10000)
+            ITERATIONS.n10000,
+            plot_origin=False,
+            start_index=0)
 
     analyze(PATHS.path2, USER_STATE_FILE,
             NEURONS_FILE.n10,
             N_CLUSTERS.n60,
-            ITERATIONS.n10000)
+            ITERATIONS.n10000,
+            plot_origin=False)
 
     analyze(PATHS.path2, USER_STATE_FILE,
             NEURONS_FILE.n60,
             N_CLUSTERS.n60,
             ITERATIONS.n10000,
-            plot_origin=True)
+            plot_origin=True,
+            start_index=None)
 
 
