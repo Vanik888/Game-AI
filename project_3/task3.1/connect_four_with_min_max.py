@@ -321,11 +321,13 @@ class ConnectFourGame:
         :return: utility value for stat S and player p
         if x wins, set utility to 1
         if o wins, set utility to -1
+        if found 3 tokens, constructing possible winning ground p*0.9
+        if 2 - p*0.7
+        if token is inserted into lowest row and in the middle column
+        and it is the only token - 0.5
         if draw, set utility to 0
-        if x moves and game is not finished, set utility to 0.5,
-         asuming that x might win later (be positive in predictions)
-        if o moves and game is not finished, set utility to -0.5,
-         asuming that o might win later (be positive in predictions)
+        if x moves and game is not finished, set utility to 0.3,
+        if o moves and game is not finished, set utility to -0.3,
         """
 
         lastInserted_x, lastInserted_y = np.where(
@@ -352,25 +354,7 @@ class ConnectFourGame:
         if len(ys_one) == 1 and ys_one[0] == n_columns/2:
             return 0.5
 
-        # if self.check_block(S, p):
-        #     return 1.5 * -1
-        # if self.check_block(S, p * -1):
-        #     return 1.5
-
         return 0.3 * p
-
-        # this state can lead to win as well as to lose, therefore
-        # max_sum = 0.0
-        # min_sum = 0.0
-        # xs_max, ys_max = np.where(S == 1)
-        # for i in xrange(len(xs_max)):
-        #     max_sum += self.x_stat[xs_max[i]][ys_max[i]]
-        # xs_min, ys_min = np.where(S == -1)
-        # for i in xrange(len(xs_min)):
-        #     min_sum += self.x_stat[xs_min[i]][ys_min[i]]
-        # return max_sum - min_sum
-        # this state can lead to win as well as to lose, therefore
-        # return 0.5 * p
 
     def check_block(self, S, p):
         row_to_check = S[self.last_inserted_child_row, :]
