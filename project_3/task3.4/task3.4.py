@@ -17,7 +17,7 @@ logger = logging.getLogger('Logger from Task 2.2')
 
 
 
-SHOW_PLOTS = False
+SHOW_PLOTS = True
 N_CLUSTERS = [10, 60]
 
 
@@ -116,7 +116,7 @@ def jointProbabilities(x, activities, neurons, kmean):
 
 
 def computeTrajectory(iterations, x, neurons, kmean, joint):
-    starting_index = np.random.randint(len(x))
+    starting_index = np.random.randint(len(x))#1058
     r = x[starting_index]
     logger.debug('Trajectory start point=%s' % r)
     trajectory = [r]
@@ -175,6 +175,7 @@ def plot_trajectory(trajectory, plot_name):
     fig = plt.figure()
     ax = fig.gca(projection='3d')
     ax.plot(x, y, z, label='trajectory')
+    ax.plot([trajectory[0, 0]], [trajectory[0, 1]], [trajectory[0, 2]], marker='o', color='red')
     file_path = plot_name
     plt.savefig(file_path, facecolor='w', edgecolor='w',
                 papertype=None, format='png', transparent=False,
@@ -221,12 +222,12 @@ def analyze(path, user_state_file, neurons_state_file, n_clusters, iterations):
     kmean_plot_file = _get_plots_name(KMEAN_PLOT_FILE)
     trajectory_plot_file = _get_plots_name(TRAJECTORY_PLOT_FILE)
 
-    plot_clusters(activities, clustered_matrix_a, kmean.cluster_centers_, kmean_plot_file)
-    plot_clusters(x, clustered_matrix_x, neurons, som_plot_file)
+    # plot_clusters(activities, clustered_matrix_a, kmean.cluster_centers_, kmean_plot_file)
+    # plot_clusters(x, clustered_matrix_x, neurons, som_plot_file)
 
     joint = jointProbabilities(x, activities, neurons, kmean)#, clustered_matrix_x, clustered_matrix_a)
     print joint.round(2)
-    trajectory = computeTrajectory(400, x, neurons, kmean, joint)
+    trajectory = computeTrajectory(200, x, neurons, kmean, joint)
     plot_trajectory(trajectory, trajectory_plot_file)
     logger.info('Analysis is done!')
 
@@ -237,32 +238,32 @@ if __name__ == '__main__':
     #         NEURONS_FILE.n10,
     #         N_CLUSTERS.n10,
     #         ITERATIONS.n10000)
-    #
+    
     # analyze(PATHS.path1, USER_STATE_FILE,
     #         NEURONS_FILE.n10,
     #         N_CLUSTERS.n60,
     #         ITERATIONS.n10000)
-    #
-    # analyze(PATHS.path1, USER_STATE_FILE,
-    #         NEURONS_FILE.n60,
-    #         N_CLUSTERS.n60,
-    #         ITERATIONS.n10000)
-
-    # ANALYSIS FOR PATH 2
-
-    analyze(PATHS.path2, USER_STATE_FILE,
-            NEURONS_FILE.n10,
-            N_CLUSTERS.n10,
-            ITERATIONS.n10000)
-
-    analyze(PATHS.path2, USER_STATE_FILE,
-            NEURONS_FILE.n10,
-            N_CLUSTERS.n60,
-            ITERATIONS.n10000)
-
-    analyze(PATHS.path2, USER_STATE_FILE,
+    
+    analyze(PATHS.path1, USER_STATE_FILE,
             NEURONS_FILE.n60,
             N_CLUSTERS.n60,
             ITERATIONS.n10000)
+
+    # ANALYSIS FOR PATH 2
+
+    # analyze(PATHS.path2, USER_STATE_FILE,
+    #         NEURONS_FILE.n10,
+    #         N_CLUSTERS.n10,
+    #         ITERATIONS.n10000)
+
+    # analyze(PATHS.path2, USER_STATE_FILE,
+    #         NEURONS_FILE.n10,
+    #         N_CLUSTERS.n60,
+    #         ITERATIONS.n10000)
+
+    # analyze(PATHS.path2, USER_STATE_FILE,
+    #         NEURONS_FILE.n60,
+    #         N_CLUSTERS.n60,
+    #         ITERATIONS.n10000)
 
 
