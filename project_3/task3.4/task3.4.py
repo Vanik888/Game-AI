@@ -288,7 +288,7 @@ if __name__ == '__main__':
             N_CLUSTERS.n10,
             ITERATIONS.n10000,
             plot_origin=False,
-            start_index=0)
+            start_index=None)
 
     analyze(PATHS.path2, USER_STATE_FILE,
             NEURONS_FILE.n10,
