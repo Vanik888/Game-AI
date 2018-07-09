@@ -54,13 +54,17 @@ def get_data(filename):
         return np.array(data, dtype=np.float)
 
 
-def get_activities(user_state_file):
+def get_activities(user_state_file, path):
     data = get_data(user_state_file)
-    activities = np.full([len(data), 3], -1, dtype=np.float)
-    for i in range(len(data)-1):
+
+    a_len = len(data)-1
+    activities = np.full([a_len, 3], -1, dtype=np.float)
+    for i in range(a_len):
         activities[i] = data[i+1] - data[i]
-    # connect the last and the first coordinates
-    activities[len(data)-1] = data[0] - data[-1]
+
+    # connect the last and the first coordinates if path=='path1'
+    if path == 'path1':
+        activities = np.vstack([activities, data[0] - data[-1]])
     return activities
 
 
@@ -97,7 +101,7 @@ def getCluster(x, neurons):
 
 def jointProbabilities(x, activities, neurons, kmean):
     joint = np.zeros([len(neurons), len(kmean.cluster_centers_)], dtype=np.int)
-    for index in range(len(x)):
+    for index in range(len(activities)):
         i = getCluster(x[index], neurons)
         j = getCluster(activities[index], kmean.cluster_centers_)
         joint[i, j] += 1
@@ -227,7 +231,7 @@ def analyze(path, user_state_file, neurons_state_file, n_clusters, iterations,
 
     x = get_data(user_state_file)
     neurons = get_data(neurons_state_file)
-    activities = get_activities(user_state_file)
+    activities = get_activities(user_state_file, path)
     kmean = KMeans(n_clusters=n_clusters,
                    random_state=0,
                    max_iter=iterations).fit(activities)
@@ -277,8 +281,8 @@ if __name__ == '__main__':
             N_CLUSTERS.n60,
             ITERATIONS.n10000,
             plot_origin=True)
-    # ANALYSIS FOR PATH 2
 
+    # ANALYSIS FOR PATH 2
     analyze(PATHS.path2, USER_STATE_FILE,
             NEURONS_FILE.n10,
             N_CLUSTERS.n10,
